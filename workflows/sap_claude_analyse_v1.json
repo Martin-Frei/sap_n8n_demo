@@ -1,0 +1,134 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "41edbe63-9463-4f2e-9b6e-f4bd29ff2c4f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"x-api-key\": \"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\",\n  \"anthropic-version\": \"2023-06-01\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        480,
+        0
+      ],
+      "id": "6457e9e2-8a82-4b6e-812e-f2920ef57212",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nreturn [\n  {\n    json: {\n      BusinessPartner: \"1000001\",\n      BusinessPartnerName: \"Müller GmbH\",\n      EmailAddress: \"info@mueller-gmbh.de\",\n      Country: \"DE\",\n      City: \"München\"\n    }\n  },\n  {\n    json: {\n      BusinessPartner: \"1000002\", \n      BusinessPartnerName: \"Schmidt AG\",\n      EmailAddress: \"info@schmidt-ag.de\",\n      Country: \"DE\",\n      City: \"Hamburg\"\n    }\n  }\n]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        0
+      ],
+      "id": "e01cd533-3597-46ce-ac82-4ea80a60cfca",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        -272
+      ],
+      "id": "a431f55d-d0ef-4f09-aad2-0726bdd0a334",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const partner = $input.first().json;\n\nreturn [{\n  json: {\n    model: \"claude-haiku-4-5-20251001\",\n    max_tokens: 500,\n    messages: [{\n      role: \"user\",\n      content: `Analysiere diesen SAP Business Partner auf Deutsch: \n      Name: ${partner.BusinessPartnerName}\n      Stadt: ${partner.City}\n      Land: ${partner.Country}\n      Email: ${partner.EmailAddress}`\n    }]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        0
+      ],
+      "id": "47176767-cc1f-46b5-8f21-845762b16a1f",
+      "name": "claude_code"
+    }
+  ],
+  "pinData": {
+    "When clicking ‘Execute workflow’": [
+      {
+        "json": {},
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "claude_code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "claude_code": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "138f3e78-a145-4dad-a1b4-96202b3a1502",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
+  },
+  "id": "DVKQ3gQwxRXuJeBd",
+  "tags": []
+}
