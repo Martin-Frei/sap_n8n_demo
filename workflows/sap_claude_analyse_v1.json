@@ -16,9 +16,11 @@
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
         "sendHeaders": true,
         "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"x-api-key\": \"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\",\n  \"anthropic-version\": \"2023-06-01\",\n  \"Content-Type\": \"application/json\"\n}",
+        "jsonHeaders": "{\n  \"anthropic-version\": \"2023-06-01\"\n}",
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
@@ -32,7 +34,13 @@
         0
       ],
       "id": "6457e9e2-8a82-4b6e-812e-f2920ef57212",
-      "name": "HTTP Request"
+      "name": "HTTP Request",
+      "credentials": {
+        "anthropicApi": {
+          "id": "jC7d3PjlvyMXkuBY",
+          "name": "Anthropic account"
+        }
+      }
     },
     {
       "parameters": {
@@ -72,6 +80,43 @@
       ],
       "id": "47176767-cc1f-46b5-8f21-845762b16a1f",
       "name": "claude_code"
+    },
+    {
+      "parameters": {
+        "resource": "chatMessage",
+        "chatId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -176
+      ],
+      "id": "b733ef64-3037-4cf4-b65d-b48c3a8d7cc9",
+      "name": "Create chat message",
+      "webhookId": "89a0ba5f-d669-4ae9-be86-f564c381ae7a"
+    },
+    {
+      "parameters": {
+        "fromEmail": "tsinntal@gmx.de",
+        "toEmail": "tsinntal@gmx.de",
+        "subject": "SAP Business Partner Analyse",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1104,
+        -176
+      ],
+      "id": "7184b40b-cd45-4565-b310-44d907168cb6",
+      "name": "Send an Email",
+      "webhookId": "2aed4d30-e3e5-46c2-b264-a3121af0ce27"
     }
   ],
   "pinData": {
@@ -116,6 +161,17 @@
           }
         ]
       ]
+    },
+    "Create chat message": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -124,7 +180,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "138f3e78-a145-4dad-a1b4-96202b3a1502",
+  "versionId": "ca9caa9a-8427-4b03-9186-714cb418f95e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
