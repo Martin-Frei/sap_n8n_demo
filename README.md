@@ -266,17 +266,41 @@ Die Sandbox enthält statische Testdaten (Aug–Nov 2016). In Produktion würde 
 
 Detaillierte Schritt-für-Schritt Dokumentation in `A_dokumentation/`:
 
-- **Tag 1-2:** SAP API Setup, n8n Installation, erster Claude Workflow
-- **Tag 3-4:** Sales Order Pipeline, EDA, Isolation Forest Training
-- **Tag 5:** Flask Server, End-to-End Pipeline, Email Digest
+- **Tag 1:** SAP API Setup, n8n Installation, erster Claude Workflow
+- **Tag 2:** Sales Order Pipeline, EDA, Isolation Forest Training
+- **Tag 3:** Flask Server, End-to-End Pipeline, Email Digest
 
+---
+
+
+---
+
+## 🇬🇧 English Summary
+
+**For my friends and tutors**
+
+This project demonstrates an automated Fraud Detection Pipeline for SAP Sales Orders:
+
+- **Data Source:** SAP S/4HANA Cloud via OData API
+- **ML Model:** Isolation Forest (scikit-learn) for anomaly detection
+- **Explainable AI:** Claude Haiku explains every anomaly in plain language
+- **Orchestration:** n8n workflow engine
+- **Storage:** Supabase (PostgreSQL)
+- **Reporting:** Automated HTML email digest with history and trend analysis
+
+**Three-Layer Detection:**
+1. **Isolation Forest** — finds statistical outliers in order data
+2. **Claude AI** — explains why each order is suspicious
+3. **Frequency Analysis** — detects unusual patterns over time
+
+The first workflow (Email Fraud Detection) was built in one evening. The full Sales Order Anomaly Detection pipeline took two mornings to complete.
 ---
 
 ## 👤 Autor
 
 **Martin Freimuth**
 - 🌐 [Portfolio](https://www.martin-freimuth.dev)
-- 💼 [LinkedIn](https://www.linkedin.com/in/martin-freimuth-089249359/)
+- 💼 [LinkedIn](https://www.linkedin.com/in/martin-freimuth/)
 - 📧 mat.frei@gmx.de
 
 ---
