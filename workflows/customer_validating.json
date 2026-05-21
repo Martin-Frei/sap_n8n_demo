@@ -1,0 +1,341 @@
+{
+  "name": "customer_validating",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2752,
+        -224
+      ],
+      "id": "77545ff6-61a6-4da2-886c-27652e39e376",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_SALES_ORDER_SRV/A_SalesOrder?$top=2000&$skip=10000&$expand=to_Partner",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2160,
+        -352
+      ],
+      "id": "d7ec7a1c-af14-44cd-a9eb-9cd3e316c8ba",
+      "name": "order_request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bya0S9uPze6BctdS",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_SALES_ORDER_SRV/A_SalesOrder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "$filter",
+              "value": "=CreationDate gt datetime'{{ $json.sap_filter_date }}'"
+            },
+            {
+              "name": "$expand",
+              "value": "to_Partner"
+            },
+            {
+              "name": "$top",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2160,
+        192
+      ],
+      "id": "d81f219e-c387-4f9d-8c37-824e489cd437",
+      "name": "order_request_2000",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bya0S9uPze6BctdS",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "sap_sales_orders",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2512,
+        -32
+      ],
+      "id": "d137b8ad-caf9-4136-9a70-3f7bb1fda4a6",
+      "name": "Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "VejGvZyPssVn2en1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Hole die Liste der Bestellungen aus dem SAP-Ergebnis\nconst orders = $input.first().json.d.results;\n\nreturn orders.map(order => {\n    // 1. SAP-Datum in ein echtes, lesbares ISO-Datum umrechnen\n    let isoDate = null;\n    if (order.CreationDate) {\n        const milliSeconds = parseInt(order.CreationDate.replace(/\\/Date\\((\\d+)\\)\\//, '$1'));\n        if (!isNaN(milliSeconds)) {\n            isoDate = new Date(milliSeconds).toISOString();\n        }\n    }\n\n    // 2. Den Hauptkunden (Sold-to Party = 'SP') aus den Partnern heraussuchen\n    const soldToPartner = order.to_Partner?.results?.find(p => p.PartnerFunction === 'SP');\n    const customerId = soldToPartner ? soldToPartner.Customer : (order.SoldToParty || \"Unbekannt\");\n\n    // 3. Sichere Struktur: JEDES Feld existiert IMMER (notfalls als null)\n    return {\n        sales_order: order.SalesOrder || null,\n        order_type: order.SalesOrderType || null,\n        organization: order.SalesOrganization || null,\n        customer_id: customerId || null,\n        net_amount: parseFloat(order.TotalNetAmount) || 0.0, // Wichtig für ML: Immer eine Zahl\n        creation_date: isoDate,\n        currency: order.TransactionCurrency || null,\n        created_by: order.CreatedByUser || null,\n        // Falls der Status leer oder unsichtbar ist, wird er hier zu null -> Struktur bleibt exakt gleich!\n        delivery_status: order.OverallTotalDeliveryStatus || null \n    };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2048,
+        -144
+      ],
+      "id": "bd7a895c-19f7-4c39-8c37-b4577125b9e2",
+      "name": "JS_daten_für_supabase_aubereiten"
+    },
+    {
+      "parameters": {
+        "jsCode": "let dbDate = null;\n\ntry {\n  const items = $input.all();\n  if (items && items.length > 0) {\n    // Alle Daten sammeln und das neueste finden\n    const dates = items\n      .map(item => item.json.creation_date)\n      .filter(d => d !== null)\n      .sort();\n    \n    if (dates.length > 0) {\n      dbDate = dates[dates.length - 1]; // letztes = neuestes\n    }\n  }\n} catch (e) {}\n\nlet finalDate;\nif (dbDate) {\n  const nextDay = new Date(dbDate);\n  nextDay.setDate(nextDay.getDate() + 1);\n  finalDate = nextDay.toISOString().split('.')[0];\n} else {\n  finalDate = \"2016-01-01T00:00:00\";\n}\n\nreturn [{\n  json: {\n    sap_filter_date: finalDate\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2272,
+        -144
+      ],
+      "id": "3a909a55-3a92-4ffa-bc2b-062e53fd0f62",
+      "name": "js_datum_2016_erzeugen"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import subprocess\nresult = subprocess.run(['python', '--version'], capture_output=True, text=True)\nreturn [{\"json\": {\"version\": result.stdout}}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        192
+      ],
+      "id": "4229a468-d584-4920-9f4b-bf75978bbbdf",
+      "name": "Code in Python"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/predict",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($input.all().map(item => item.json)) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1872,
+        32
+      ],
+      "id": "ac066038-efcf-4be0-be19-bdbf7312d14d",
+      "name": "http_request_flask"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst anomalies = response.anomalies;\n\nconst liste = anomalies.map(a => \n  `Order: ${a.sales_order} | Kunde: ${a.customer_id} | Betrag: ${a.net_amount} USD | Score: ${a.anomaly_score}`\n).join('\\n');\n\nreturn [{\n  json: {\n    model: \"claude-haiku-4-5-20251001\",\n    max_tokens: 1000,\n    messages: [{\n      role: \"user\",\n      content: `Du bist ein Fraud Detection Experte.\nAnalysiere diese ${anomalies.length} auffälligen SAP Sales Orders auf Deutsch:\n\n${liste}\n\nGib für jede Order:\n1. Warum auffällig (1 Satz)\n2. Empfohlene Maßnahme (1 Satz)\n3. Risiko Level: KRITISCH / VERDÄCHTIG / PRÜFEN`\n    }]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        32
+      ],
+      "id": "47c60dce-7d3b-4ecb-b69d-7c39b3b12e40",
+      "name": "llm_prompt"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1472,
+        32
+      ],
+      "id": "4787e234-aedd-4e48-a074-6e29fdc5b845",
+      "name": "HTTP Request",
+      "executeOnce": false,
+      "credentials": {
+        "anthropicApi": {
+          "id": "jC7d3PjlvyMXkuBY",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "sap_sales_orders",
+        "dataToSend": "autoMapInputData"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1872,
+        -144
+      ],
+      "id": "e37a7f0b-cd0e-4bc0-904f-c00128a316a1",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "VejGvZyPssVn2en1",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "order_request": {
+      "main": [
+        []
+      ]
+    },
+    "order_request_2000": {
+      "main": [
+        [
+          {
+            "node": "JS_daten_für_supabase_aubereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase": {
+      "main": [
+        [
+          {
+            "node": "js_datum_2016_erzeugen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JS_daten_für_supabase_aubereiten": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "http_request_flask",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "js_datum_2016_erzeugen": {
+      "main": [
+        [
+          {
+            "node": "order_request_2000",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "http_request_flask": {
+      "main": [
+        [
+          {
+            "node": "llm_prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "llm_prompt": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "683ec010-a4ef-46c1-9ec5-dad29306c44a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
+  },
+  "id": "1s9rAo30jL1CHcJO",
+  "tags": []
+}
