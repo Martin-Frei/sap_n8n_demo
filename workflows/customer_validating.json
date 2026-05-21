@@ -126,7 +126,8 @@
         16
       ],
       "id": "ac066038-efcf-4be0-be19-bdbf7312d14d",
-      "name": "http_request_flask"
+      "name": "http_request_flask",
+      "executeOnce": true
     },
     {
       "parameters": {
@@ -350,7 +351,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "4766c62d-867b-42f0-81de-d9a52c85d99c",
+  "versionId": "b48ed2f4-e0a8-4bfa-848f-a8b706a34af4",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
