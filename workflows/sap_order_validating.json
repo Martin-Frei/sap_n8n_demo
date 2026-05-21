@@ -1,13 +1,13 @@
 {
-  "name": "customer_validating",
+  "name": "sap_order_validateing",
   "nodes": [
     {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -3136,
-        -384
+        -3168,
+        -640
       ],
       "id": "77545ff6-61a6-4da2-886c-27652e39e376",
       "name": "When clicking ‘Execute workflow’"
@@ -39,8 +39,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -2848,
-        0
+        -2496,
+        -640
       ],
       "id": "d81f219e-c387-4f9d-8c37-824e489cd437",
       "name": "order_request_2000",
@@ -61,8 +61,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -3072,
-        0
+        -2944,
+        -640
       ],
       "id": "d137b8ad-caf9-4136-9a70-3f7bb1fda4a6",
       "name": "Supabase",
@@ -81,8 +81,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2736,
-        -176
+        -2272,
+        -640
       ],
       "id": "bd7a895c-19f7-4c39-8c37-b4577125b9e2",
       "name": "JS_daten_für_supabase_aubereiten"
@@ -94,8 +94,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2960,
-        -176
+        -2720,
+        -640
       ],
       "id": "3a909a55-3a92-4ffa-bc2b-062e53fd0f62",
       "name": "js_datum_2016_erzeugen"
@@ -122,8 +122,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -2624,
-        16
+        -2048,
+        -544
       ],
       "id": "ac066038-efcf-4be0-be19-bdbf7312d14d",
       "name": "http_request_flask",
@@ -136,8 +136,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2448,
-        16
+        -1824,
+        -544
       ],
       "id": "47c60dce-7d3b-4ecb-b69d-7c39b3b12e40",
       "name": "llm_prompt"
@@ -166,8 +166,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -2256,
-        16
+        -1600,
+        -544
       ],
       "id": "4787e234-aedd-4e48-a074-6e29fdc5b845",
       "name": "HTTP Request",
@@ -187,8 +187,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -2544,
-        -176
+        -2048,
+        -736
       ],
       "id": "e37a7f0b-cd0e-4bc0-904f-c00128a316a1",
       "name": "Create a row",
@@ -207,11 +207,12 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1872,
-        16
+        -1152,
+        -544
       ],
       "id": "4685aa89-026f-4764-be22-87428d1af226",
       "name": "anomalie_safe_supabase",
+      "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
           "id": "VejGvZyPssVn2en1",
@@ -226,11 +227,93 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2080,
-        16
+        -1376,
+        -544
       ],
       "id": "ad91f31a-33cf-4e25-9345-f79cf1be84c3",
       "name": "claude_parsen"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const ordersData = $(\"historie_orders\").all();\n  const anomalienData = $(\"historie_anomalien\").all();\n\n  const totalOrders = ordersData.length;\n  const orderDates = ordersData.map(o => o.json.creation_date).filter(d => d);\n  orderDates.sort();\n  const minDate = orderDates.length > 0 ? new Date(orderDates[0]) : null;\n  const maxDate = orderDates.length > 0 ? new Date(orderDates[orderDates.length - 1]) : null;\n  const tageSpanne = minDate && maxDate ? Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1 : 0;\n  const ordersProTag = tageSpanne > 0 ? (totalOrders / tageSpanne).toFixed(1) : 0;\n\n  const totalAnomalien = anomalienData.length;\n  const kritisch = anomalienData.filter(a => a.json.risiko_level === 'KRITISCH').length;\n  const verdaechtig = anomalienData.filter(a => a.json.risiko_level === 'VERDÄCHTIG').length;\n  const pruefen = anomalienData.filter(a => a.json.risiko_level === 'PRÜFEN').length;\n  const anomalieRate = totalOrders > 0 ? ((totalAnomalien / totalOrders) * 100).toFixed(2) : 0;\n\n  const anomalieProTag = {};\n  anomalienData.forEach(a => {\n    const tag = a.json.detected_at ? String(a.json.detected_at).split('T')[0] : 'unbekannt';\n    anomalieProTag[tag] = (anomalieProTag[tag] || 0) + 1;\n  });\n  const top5Tage = Object.entries(anomalieProTag).sort((a, b) => b[1] - a[1]).slice(0, 5);\n\n  const anzahlTage = Object.keys(anomalieProTag).length || 1;\n  const durchschnittProTag = totalAnomalien / anzahlTage;\n  const heuteTag = new Date().toISOString().split('T')[0];\n  const heuteAnzahl = anomalieProTag[heuteTag] || 0;\n  const haeufung = heuteAnzahl > durchschnittProTag * 3;\n  const haeufungStatus = haeufung\n    ? `⚠️ HÄUFUNG! (${heuteAnzahl} heute vs Schnitt ${durchschnittProTag.toFixed(1)})`\n    : `✅ Normal (${heuteAnzahl} heute, Schnitt ${durchschnittProTag.toFixed(1)})`;\n\n  const letzteAnomalien = [...anomalienData].sort((a, b) => new Date(b.json.detected_at) - new Date(a.json.detected_at)).slice(0, 10);\n\n  const detailRows = letzteAnomalien.map(a => {\n    const j = a.json;\n    const farbe = j.risiko_level === 'KRITISCH' ? '#e74c3c' : j.risiko_level === 'VERDÄCHTIG' ? '#f39c12' : '#3498db';\n    return `<tr><td style=\"padding:8px;border-bottom:1px solid #eee;\">${j.sales_order || '-'}</td><td style=\"padding:8px;border-bottom:1px solid #eee;\">${j.customer_id || '-'}</td><td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">${j.net_amount || '-'} USD</td><td style=\"padding:8px;border-bottom:1px solid #eee;\">${j.anomaly_score || '-'}</td><td style=\"padding:8px;border-bottom:1px solid #eee;\"><span style=\"background:${farbe};color:white;padding:2px 8px;border-radius:4px;\">${j.risiko_level || '-'}</span></td></tr>`;\n  }).join('');\n\n  const top5Html = top5Tage.map((t, i) => `<tr><td style=\"padding:6px;\">${i + 1}.</td><td style=\"padding:6px;\">${t[0]}</td><td style=\"padding:6px;font-weight:bold;\">${t[1]} Anomalien</td></tr>`).join('');\n\n  const html = `<html><body style=\"font-family:Arial,sans-serif;max-width:800px;margin:auto;padding:20px;background:#f5f5f5;\">\n<div style=\"background:#c0392b;color:white;padding:20px;border-radius:8px 8px 0 0;\">\n<h1 style=\"margin:0;\">🚨 SAP Fraud Detection Digest</h1>\n<p style=\"margin:5px 0 0 0;opacity:0.9;\">Generiert: ${new Date().toLocaleString('de-DE')}</p></div>\n<div style=\"background:white;padding:20px;border-radius:0 0 8px 8px;\">\n<h2 style=\"color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:8px;\">📊 Datenbestand</h2>\n<table style=\"width:100%;\"><tr><td style=\"padding:6px;color:#666;\">Orders:</td><td style=\"font-weight:bold;\">${totalOrders}</td></tr>\n<tr><td style=\"padding:6px;color:#666;\">Zeitraum:</td><td>${minDate ? minDate.toLocaleDateString('de-DE') : '-'} bis ${maxDate ? maxDate.toLocaleDateString('de-DE') : '-'}</td></tr>\n<tr><td style=\"padding:6px;color:#666;\">Tage:</td><td>${tageSpanne}</td></tr>\n<tr><td style=\"padding:6px;color:#666;\">Orders/Tag:</td><td>${ordersProTag}</td></tr></table>\n<h2 style=\"color:#2c3e50;border-bottom:2px solid #e74c3c;padding-bottom:8px;margin-top:30px;\">📈 Anomalie Historie</h2>\n<table style=\"width:100%;\"><tr><td style=\"padding:6px;color:#666;\">Gesamt:</td><td style=\"font-weight:bold;\">${totalAnomalien}</td></tr>\n<tr><td style=\"padding:6px;color:#666;\">Rate:</td><td>${anomalieRate}%</td></tr>\n<tr><td style=\"padding:6px;color:#666;\">Verteilung:</td><td><span style=\"background:#e74c3c;color:white;padding:2px 8px;border-radius:4px;\">KRITISCH: ${kritisch}</span> <span style=\"background:#f39c12;color:white;padding:2px 8px;border-radius:4px;\">VERDÄCHTIG: ${verdaechtig}</span> <span style=\"background:#3498db;color:white;padding:2px 8px;border-radius:4px;\">PRÜFEN: ${pruefen}</span></td></tr></table>\n<h2 style=\"color:#2c3e50;border-bottom:2px solid #f39c12;padding-bottom:8px;margin-top:30px;\">🔥 Top 5 Anomalie Tage</h2>\n<table style=\"width:100%;\">${top5Html || '<tr><td style=\"color:#999;\">Noch keine Daten</td></tr>'}</table>\n<h2 style=\"color:#2c3e50;border-bottom:2px solid #27ae60;padding-bottom:8px;margin-top:30px;\">🔍 Häufungscheck</h2>\n<p style=\"font-size:16px;padding:10px;background:${haeufung ? '#ffeaa7' : '#dfe6e9'};border-radius:4px;\">${haeufungStatus}</p>\n<h2 style=\"color:#2c3e50;border-bottom:2px solid #e74c3c;padding-bottom:8px;margin-top:30px;\">🚨 Letzte 10 Anomalien</h2>\n<table style=\"width:100%;border-collapse:collapse;\"><tr style=\"background:#34495e;color:white;\"><th style=\"padding:8px;\">Order</th><th style=\"padding:8px;\">Kunde</th><th style=\"padding:8px;\">Betrag</th><th style=\"padding:8px;\">Score</th><th style=\"padding:8px;\">Risiko</th></tr>${detailRows || '<tr><td colspan=\"5\" style=\"padding:8px;color:#999;\">Keine Anomalien</td></tr>'}</table>\n</div><p style=\"color:#999;font-size:11px;text-align:center;\">SAP × n8n × Isolation Forest × Claude</p></body></html>`;\n\n  return [{\n    json: {\n      subject: `🚨 SAP Fraud Digest — ${totalAnomalien} Anomalien | ${new Date().toLocaleDateString('de-DE')}`,\n      html: html\n    }\n  }];\n\n} catch (error) {\n  return [{\n    json: {\n      subject: `🚨 SAP Fraud Digest — Fehler | ${new Date().toLocaleDateString('de-DE')}`,\n      html: `<html><body><h1>Digest Fehler</h1><p>${error.message}</p><p>${error.stack}</p></body></html>`\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -544
+      ],
+      "id": "d561bcb1-2338-4f08-ac1b-b35ff45d8806",
+      "name": "js_digest_for_email"
+    },
+    {
+      "parameters": {
+        "fromEmail": "mat.frei@gmx.de",
+        "toEmail": "tsinntal@gmx.de",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -256,
+        -544
+      ],
+      "id": "fb74bcb6-ba97-459a-ae05-9371576aace5",
+      "name": "Send an Email",
+      "webhookId": "1dc216b9-4dc0-4cba-aa94-1a88945ea7c7",
+      "executeOnce": true,
+      "credentials": {
+        "smtp": {
+          "id": "M2nD4f2EB6jmeCI4",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "sap_sales_orders",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -544
+      ],
+      "id": "be812fe8-713d-495c-83a0-806879ee7c84",
+      "name": "historie_orders",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "VejGvZyPssVn2en1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "sap_order_anomalies",
+        "limit": 100
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        -544
+      ],
+      "id": "9f9748bf-bcc6-4402-8d6f-c1baca2ad65b",
+      "name": "historie_anomalien",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "VejGvZyPssVn2en1",
+          "name": "Supabase account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -302,6 +385,11 @@
             "node": "llm_prompt",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "js_digest_for_email",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -343,6 +431,50 @@
           }
         ]
       ]
+    },
+    "anomalie_safe_supabase": {
+      "main": [
+        [
+          {
+            "node": "historie_orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "js_digest_for_email": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "historie_orders": {
+      "main": [
+        [
+          {
+            "node": "historie_anomalien",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "historie_anomalien": {
+      "main": [
+        [
+          {
+            "node": "js_digest_for_email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -351,7 +483,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "b48ed2f4-e0a8-4bfa-848f-a8b706a34af4",
+  "versionId": "9810f48c-a5f3-4aa5-829a-9031e996ec1d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
