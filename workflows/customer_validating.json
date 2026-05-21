@@ -6,33 +6,11 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -2752,
-        -224
+        -3136,
+        -384
       ],
       "id": "77545ff6-61a6-4da2-886c-27652e39e376",
       "name": "When clicking ‘Execute workflow’"
-    },
-    {
-      "parameters": {
-        "url": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_SALES_ORDER_SRV/A_SalesOrder?$top=2000&$skip=10000&$expand=to_Partner",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        -2160,
-        -352
-      ],
-      "id": "d7ec7a1c-af14-44cd-a9eb-9cd3e316c8ba",
-      "name": "order_request",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "bya0S9uPze6BctdS",
-          "name": "Header Auth account 2"
-        }
-      }
     },
     {
       "parameters": {
@@ -61,8 +39,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -2160,
-        192
+        -2848,
+        0
       ],
       "id": "d81f219e-c387-4f9d-8c37-824e489cd437",
       "name": "order_request_2000",
@@ -83,8 +61,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -2512,
-        -32
+        -3072,
+        0
       ],
       "id": "d137b8ad-caf9-4136-9a70-3f7bb1fda4a6",
       "name": "Supabase",
@@ -103,8 +81,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2048,
-        -144
+        -2736,
+        -176
       ],
       "id": "bd7a895c-19f7-4c39-8c37-b4577125b9e2",
       "name": "JS_daten_für_supabase_aubereiten"
@@ -116,25 +94,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2272,
-        -144
+        -2960,
+        -176
       ],
       "id": "3a909a55-3a92-4ffa-bc2b-062e53fd0f62",
       "name": "js_datum_2016_erzeugen"
-    },
-    {
-      "parameters": {
-        "language": "pythonNative",
-        "pythonCode": "import subprocess\nresult = subprocess.run(['python', '--version'], capture_output=True, text=True)\nreturn [{\"json\": {\"version\": result.stdout}}]"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -2480,
-        192
-      ],
-      "id": "4229a468-d584-4920-9f4b-bf75978bbbdf",
-      "name": "Code in Python"
     },
     {
       "parameters": {
@@ -158,8 +122,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1872,
-        32
+        -2624,
+        16
       ],
       "id": "ac066038-efcf-4be0-be19-bdbf7312d14d",
       "name": "http_request_flask"
@@ -171,8 +135,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1680,
-        32
+        -2448,
+        16
       ],
       "id": "47c60dce-7d3b-4ecb-b69d-7c39b3b12e40",
       "name": "llm_prompt"
@@ -201,8 +165,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1472,
-        32
+        -2256,
+        16
       ],
       "id": "4787e234-aedd-4e48-a074-6e29fdc5b845",
       "name": "HTTP Request",
@@ -222,8 +186,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1872,
-        -144
+        -2544,
+        -176
       ],
       "id": "e37a7f0b-cd0e-4bc0-904f-c00128a316a1",
       "name": "Create a row",
@@ -233,6 +197,39 @@
           "name": "Supabase account"
         }
       }
+    },
+    {
+      "parameters": {
+        "tableId": "sap_order_anomalies",
+        "dataToSend": "autoMapInputData"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1872,
+        16
+      ],
+      "id": "4685aa89-026f-4764-be22-87428d1af226",
+      "name": "anomalie_safe_supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "VejGvZyPssVn2en1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const claudeText = $input.first().json.content[0].text;\nconst flaskData = $(\"http_request_flask\").first().json.anomalies || [];\n\nconst orderBlocks = claudeText.split('## Order ').filter(b => b.trim());\n\nreturn orderBlocks\n  .filter(block => !block.startsWith('#'))  // Überschrift rausfiltern\n  .map(block => {\n    const lines = block.split('\\n').filter(l => l.trim());\n    const firstLine = lines[0] || '';\n    \n    const orderMatch = firstLine.match(/^(\\d+)/);\n    const salesOrder = orderMatch ? orderMatch[1] : 'unknown';\n    \n    if (salesOrder === 'unknown') return null;\n    \n    let risikoLevel = 'PRÜFEN';\n    if (block.includes('KRITISCH')) risikoLevel = 'KRITISCH';\n    else if (block.includes('VERDÄCHTIG')) risikoLevel = 'VERDÄCHTIG';\n    \n    const flaskOrder = flaskData.find(a => String(a.sales_order) === salesOrder) || {};\n\n    return {\n      json: {\n        sales_order: salesOrder,\n        customer_id: flaskOrder.customer_id || null,\n        net_amount: flaskOrder.net_amount || null,\n        anomaly_score: flaskOrder.anomaly_score || null,\n        claude_analyse: block.trim(),\n        risiko_level: risikoLevel\n      }\n    };\n  })\n  .filter(item => item !== null);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2080,
+        16
+      ],
+      "id": "ad91f31a-33cf-4e25-9345-f79cf1be84c3",
+      "name": "claude_parsen"
     }
   ],
   "pinData": {},
@@ -246,11 +243,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "order_request": {
-      "main": [
-        []
       ]
     },
     "order_request_2000": {
@@ -323,6 +315,33 @@
           }
         ]
       ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "claude_parsen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        []
+      ]
+    },
+    "claude_parsen": {
+      "main": [
+        [
+          {
+            "node": "anomalie_safe_supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -331,7 +350,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "683ec010-a4ef-46c1-9ec5-dad29306c44a",
+  "versionId": "4766c62d-867b-42f0-81de-d9a52c85d99c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
