@@ -6,8 +6,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -3168,
-        -640
+        -3056,
+        -992
       ],
       "id": "77545ff6-61a6-4da2-886c-27652e39e376",
       "name": "When clicking ‘Execute workflow’"
@@ -39,7 +39,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -2496,
+        -2720,
         -640
       ],
       "id": "d81f219e-c387-4f9d-8c37-824e489cd437",
@@ -81,8 +81,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2272,
-        -640
+        -2608,
+        -992
       ],
       "id": "bd7a895c-19f7-4c39-8c37-b4577125b9e2",
       "name": "JS_daten_für_supabase_aubereiten"
@@ -94,8 +94,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2720,
-        -640
+        -2832,
+        -992
       ],
       "id": "3a909a55-3a92-4ffa-bc2b-062e53fd0f62",
       "name": "js_datum_2016_erzeugen"
@@ -122,8 +122,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -2048,
-        -544
+        -2496,
+        -656
       ],
       "id": "ac066038-efcf-4be0-be19-bdbf7312d14d",
       "name": "http_request_flask",
@@ -131,13 +131,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const response = $input.first().json;\nconst anomalies = response.anomalies;\n\nconst liste = anomalies.map(a => \n  `Order: ${a.sales_order} | Kunde: ${a.customer_id} | Betrag: ${a.net_amount} USD | Score: ${a.anomaly_score}`\n).join('\\n');\n\nreturn [{\n  json: {\n    model: \"claude-haiku-4-5-20251001\",\n    max_tokens: 1000,\n    messages: [{\n      role: \"user\",\n      content: `Du bist ein Fraud Detection Experte.\nAnalysiere diese ${anomalies.length} auffälligen SAP Sales Orders auf Deutsch:\n\n${liste}\n\nGib für jede Order:\n1. Warum auffällig (1 Satz)\n2. Empfohlene Maßnahme (1 Satz)\n3. Risiko Level: KRITISCH / VERDÄCHTIG / PRÜFEN`\n    }]\n  }\n}];"
+        "jsCode": "const response = $input.first().json;\nconst anomalies = response.anomalies;\n\nif (!anomalies || anomalies.length === 0) {\n  return [{\n    json: {\n      model: \"claude-haiku-4-5-20251001\",\n      max_tokens: 100,\n      messages: [{\n        role: \"user\",\n        content: \"Antworte NUR: []\"\n      }]\n    }\n  }];\n}\n\nconst liste = anomalies.map(a => \n  `Order: ${a.sales_order} | Kunde: ${a.customer_id} | Betrag: ${a.net_amount} USD | Score: ${a.anomaly_score}`\n).join('\\n');\n\nreturn [{\n  json: {\n    model: \"claude-haiku-4-5-20251001\",\n    max_tokens: 2000,\n    messages: [{\n      role: \"user\",\n      content: `Du bist ein Fraud Detection Experte.\nAnalysiere diese ${anomalies.length} auffälligen SAP Sales Orders.\n\n${liste}\n\nAntworte NUR als JSON-Array, kein Text davor oder danach, keine Backticks:\n[\n  {\n    \"sales_order\": \"Ordernummer\",\n    \"grund\": \"Ein Satz warum auffällig\",\n    \"massnahme\": \"Empfohlene Maßnahme\",\n    \"risiko_level\": \"KRITISCH oder VERDÄCHTIG oder PRÜFEN\"\n  }\n]`\n    }]\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1824,
-        -544
+        -2384,
+        -464
       ],
       "id": "47c60dce-7d3b-4ecb-b69d-7c39b3b12e40",
       "name": "llm_prompt"
@@ -166,8 +166,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1600,
-        -544
+        -2176,
+        -464
       ],
       "id": "4787e234-aedd-4e48-a074-6e29fdc5b845",
       "name": "HTTP Request",
@@ -187,8 +187,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -2048,
-        -736
+        -2368,
+        -992
       ],
       "id": "e37a7f0b-cd0e-4bc0-904f-c00128a316a1",
       "name": "Create a row",
@@ -207,8 +207,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1152,
-        -544
+        -1952,
+        -976
       ],
       "id": "4685aa89-026f-4764-be22-87428d1af226",
       "name": "anomalie_safe_supabase",
@@ -222,13 +222,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const claudeText = $input.first().json.content[0].text;\nconst flaskData = $(\"http_request_flask\").first().json.anomalies || [];\n\nconst orderBlocks = claudeText.split('## Order ').filter(b => b.trim());\n\nreturn orderBlocks\n  .filter(block => !block.startsWith('#'))  // Überschrift rausfiltern\n  .map(block => {\n    const lines = block.split('\\n').filter(l => l.trim());\n    const firstLine = lines[0] || '';\n    \n    const orderMatch = firstLine.match(/^(\\d+)/);\n    const salesOrder = orderMatch ? orderMatch[1] : 'unknown';\n    \n    if (salesOrder === 'unknown') return null;\n    \n    let risikoLevel = 'PRÜFEN';\n    if (block.includes('KRITISCH')) risikoLevel = 'KRITISCH';\n    else if (block.includes('VERDÄCHTIG')) risikoLevel = 'VERDÄCHTIG';\n    \n    const flaskOrder = flaskData.find(a => String(a.sales_order) === salesOrder) || {};\n\n    return {\n      json: {\n        sales_order: salesOrder,\n        customer_id: flaskOrder.customer_id || null,\n        net_amount: flaskOrder.net_amount || null,\n        anomaly_score: flaskOrder.anomaly_score || null,\n        claude_analyse: block.trim(),\n        risiko_level: risikoLevel\n      }\n    };\n  })\n  .filter(item => item !== null);"
+        "jsCode": "try {\n  const claudeText = $input.first().json.content[0].text;\n  const flaskData = $(\"http_request_flask\").first().json.anomalies || [];\n  \n  // JSON parsen — Backticks entfernen falls Claude sie trotzdem schickt\n  const cleanJson = claudeText.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  const result = JSON.parse(cleanJson);\n  \n  return result.map(item => {\n    const flaskOrder = flaskData.find(a => String(a.sales_order) === String(item.sales_order)) || {};\n    \n    return {\n      json: {\n        sales_order: item.sales_order,\n        customer_id: flaskOrder.customer_id || null,\n        net_amount: flaskOrder.net_amount || null,\n        anomaly_score: flaskOrder.anomaly_score || null,\n        claude_analyse: `${item.grund} | ${item.massnahme}`,\n        risiko_level: item.risiko_level\n      }\n    };\n  });\n  \n} catch (error) {\n  return [{\n    json: {\n      sales_order: \"PARSE_ERROR\",\n      customer_id: null,\n      net_amount: null,\n      anomaly_score: null,\n      claude_analyse: error.message,\n      risiko_level: \"PRÜFEN\"\n    }\n  }];\n}"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1376,
-        -544
+        -2064,
+        -688
       ],
       "id": "ad91f31a-33cf-4e25-9345-f79cf1be84c3",
       "name": "claude_parsen"
@@ -240,8 +240,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -480,
-        -544
+        -1728,
+        -496
       ],
       "id": "d561bcb1-2338-4f08-ac1b-b35ff45d8806",
       "name": "js_digest_for_email"
@@ -257,8 +257,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        -256,
-        -544
+        -1616,
+        -720
       ],
       "id": "fb74bcb6-ba97-459a-ae05-9371576aace5",
       "name": "Send an Email",
@@ -280,8 +280,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -928,
-        -544
+        -1760,
+        -976
       ],
       "id": "be812fe8-713d-495c-83a0-806879ee7c84",
       "name": "historie_orders",
@@ -302,8 +302,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -704,
-        -544
+        -1600,
+        -976
       ],
       "id": "9f9748bf-bcc6-4402-8d6f-c1baca2ad65b",
       "name": "historie_anomalien",
@@ -483,7 +483,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "9810f48c-a5f3-4aa5-829a-9031e996ec1d",
+  "versionId": "aaaa6e43-9f78-42e7-bf56-ef6ec8d066fb",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"

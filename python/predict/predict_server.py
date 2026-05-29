@@ -30,6 +30,10 @@ import joblib
 import pandas as pd
 import numpy as np
 import os
+import dns.resolver
+import smtplib
+import time
+import random
 
 # ============================================================
 # 1. FLASK APP ERSTELLEN
@@ -258,6 +262,74 @@ def retrain():
     })
 
 
+@app.route('/verify', methods=['POST'])
+def verify_email():
+    data = request.json
+    results = []
+    
+    for entry in data:
+        email = entry.get('EmailAddress', '')
+        domain = email.split('@')[1] if '@' in email else ''
+        
+        # Layer 1 — MX Check
+        mx_status = 'UNKNOWN'
+        try:
+            mx_records = dns.resolver.resolve(domain, 'MX')
+            mx_status = 'MX_FOUND'
+        except dns.resolver.NXDOMAIN:
+            mx_status = 'DOMAIN_NOT_FOUND'
+        except dns.resolver.NoAnswer:
+            mx_status = 'NO_MX_RECORD'
+        except dns.resolver.Timeout:
+            mx_status = 'TIMEOUT'
+        except:
+            mx_status = 'ERROR'
+        
+        # Layer 2 — SMTP Check (nur wenn MX existiert)
+        smtp_status = 'SKIPPED'
+        if mx_status == 'MX_FOUND':
+            try:
+                mx_host = str(mx_records[0].exchange)
+                server = smtplib.SMTP(mx_host, 25, timeout=5)
+                server.helo()
+                server.mail('verify@check.local')
+                code, msg = server.rcpt(email)
+                if code == 250:
+                    smtp_status = 'VALID'
+                elif code == 550:
+                    smtp_status = 'SMTP_REJECTED'
+                else:
+                    smtp_status = f'SMTP_CODE_{code}'
+                server.quit()
+            except smtplib.SMTPConnectError:
+                smtp_status = 'CONNECTION_REFUSED'
+            except smtplib.SMTPServerDisconnected:
+                smtp_status = 'SERVER_DISCONNECTED'
+            except TimeoutError:
+                smtp_status = 'TIMEOUT'
+            except:
+                smtp_status = 'ERROR'
+        
+        results.append({
+            'email': email,
+            'address_id': entry.get('AddressID', ''),
+            'person': entry.get('Person', ''),
+            'domain': domain,
+            'mx_status': mx_status,
+            'smtp_status': smtp_status,
+            'domain_length': len(domain.split('.')[0]),
+            'is_numeric': domain.split('.')[0].isnumeric(),
+            'tld': domain.split('.')[-1] if domain else ''
+        })
+        
+        # Jitter — zufällige Pause zwischen 0.5-2 Sekunden
+        time.sleep(random.uniform(0.5, 2.0))
+    
+    return jsonify({
+        "total_checked": len(results),
+        "results": results
+    })
+
 # ============================================================
 # 4. SERVER STARTEN
 # ============================================================
@@ -283,3 +355,11 @@ if __name__ == '__main__':
         port=5001,
         debug=True
     )
+    
+    
+    
+    
+    
+
+
+
