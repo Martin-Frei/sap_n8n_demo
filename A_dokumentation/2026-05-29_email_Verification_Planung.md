@@ -449,4 +449,4 @@ Dieses Projekt demonstriert:
 ---
 
 *Geplant am 30.05.2026 — Email Verification Pipeline*
-*Hacker Pschorr + Emmentaler + Tullamore Dew Edition 🍺🧀🥃*
+*Hacker Pschorr + Emmentaler + Tullamore DEW Edition 🍺🧀🥃*
