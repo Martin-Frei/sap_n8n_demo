@@ -44,9 +44,9 @@ Layer 3: Entropy Check (Name/Email zufällig generiert?)
 Layer 4: Isolation Forest (Gesamtbild aller Features)
     ↓
 Entscheidung:
-    → ALLE Layer OK → ✅ Email sauber → kein Claude nötig
-    → EIN Layer Alarm → Claude bekommt ALLE Ergebnisse
-                      → Claude entscheidet final
+    → ALLE Layer OK → ✅ Email sauber → kein AI nötig
+    → EIN Layer Alarm → AI bekommt ALLE Ergebnisse
+                      → AI entscheidet final
 ```
 
 ---
@@ -182,7 +182,7 @@ MX: ok ✅ + SMTP: ok ✅ + Entropy: hoch ⚠️ + .info TLD ⚠️
 ```
 
 **Warum nicht alleine ausreichend:** ML kann keine Erklärung geben.
-"Score -0.18" sagt dem User nichts → deshalb Claude als Layer 5.
+"Score -0.18" sagt dem User nichts → deshalb AI als Layer 5.
 
 **Warum nicht DNS/SMTP als Features für Isolation Forest (Option B verworfen):**
 - Training müsste für ALLE Trainings-Emails DNS/SMTP Checks durchführen
@@ -193,17 +193,17 @@ MX: ok ✅ + SMTP: ok ✅ + Entropy: hoch ⚠️ + .info TLD ⚠️
 
 ---
 
-### Layer 5 — Claude AI (nur bei Alarm)
+### Layer 5 — AI (nur bei Alarm)
 
 ```
-Was:     Claude bekommt ALLE Ergebnisse der anderen Layer
+Was:     AI bekommt ALLE Ergebnisse der anderen Layer
          und gibt eine Begründung + Empfehlung
 Wann:    NUR wenn mindestens 1 Layer Alarm gibt
-Wie:     Anthropic API (Claude Haiku)
+Wie:     Anthropic API (Haiku)
 Kosten:  ~0.001 USD pro Call
 ```
 
-**Claude bekommt:**
+**AI bekommt:**
 ```
 Email: hkpjpshl@immenseignite.info
 Name: kdpmgisnyk
@@ -217,7 +217,7 @@ Bewerte: SPAM / VERDÄCHTIG / ECHT
 Begründung in 1-2 Sätzen.
 ```
 
-**Claude antwortet:**
+**AI antwortet:**
 ```
 SPAM — Username und Name sind mit hoher Wahrscheinlichkeit 
 zufällig generiert (hohe Shannon Entropy). Trotz gültiger 
@@ -225,10 +225,10 @@ Domain und SMTP deutet die Kombination auf automatisierten
 Spam hin. Empfehlung: blockieren.
 ```
 
-**Warum nicht immer Claude:** 
-- 99% der echten Emails → alle Layer OK → kein Claude Call nötig
+**Warum nicht immer AI:** 
+- 99% der echten Emails → alle Layer OK → kein AI Call nötig
 - Spart 99% der API Kosten
-- Claude nur als "Schiedsrichter" bei Zweifelsfällen
+- AI nur als "Schiedsrichter" bei Zweifelsfällen
 
 ---
 
@@ -236,8 +236,8 @@ Spam hin. Empfehlung: blockieren.
 
 ```
 100 Kontaktanfragen pro Monat:
-→ 95 echte Emails → alle Layer OK → 0 Claude Calls
-→ 5 verdächtige → 5 Claude Calls → ~0.005 USD
+→ 95 echte Emails → alle Layer OK → 0 AI Calls
+→ 5 verdächtige → 5 AI Calls → ~0.005 USD
 → Layer 1-4: komplett kostenlos (lokal)
 → Gesamtkosten: ~0.005 USD / Monat!
 
@@ -266,7 +266,7 @@ Layer 1-4 prüfen
     ↓                             ↓
 Alle OK                    Min. 1 Alarm
     ↓                             ↓
-Formular abschicken         Claude entscheidet
+Formular abschicken         AI entscheidet
 Email an Martin                   ↓
     ↓                    ┌────────┴────────┐
     ↓                    ↓                 ↓
@@ -287,7 +287,7 @@ Layer 0c: Progressive Rate Limiting
 
 NEU dazu:
 Layer 1-4: Email Verification
-Layer 5:   Claude (bei Bedarf)
+Layer 5:   AI (bei Bedarf)
 ```
 
 ### Gesamter Schutz-Stack
@@ -302,7 +302,7 @@ Icon-Challenge → Falsch? → ❌ Block (Rate Limit)
 Email Verification (Layer 1-4)
     ↓
     → Alle OK → ✅ Senden
-    → Alarm → Claude → SPAM? → ❌ Block
+    → Alarm → AI → SPAM? → ❌ Block
                      → ECHT? → ✅ Senden
 ```
 
@@ -360,7 +360,7 @@ Split Out
 Flask /verify (Batch, 10er Pakete)
     ↓
 Ergebnis prüfen: Alarm?
-    ↓ Ja → Claude → Supabase → Digest
+    ↓ Ja → AI → Supabase → Digest
     ↓ Nein → Supabase (nur Protokoll)
 ```
 
@@ -384,7 +384,7 @@ def contact_form(request):
     if all_layers_ok(check):
         send_email(...)
     else:
-        # Claude entscheiden lassen
+        # AI entscheiden lassen
         claude_result = ask_claude(check)
         if claude_result == 'SPAM':
             return error_response("Ungültige Email")
@@ -399,7 +399,7 @@ def contact_form(request):
 | Aspekt | Entscheidung | Begründung |
 |--------|-------------|------------|
 | Batch-Größe | 10 Emails | Kontrolle der Last, Timeout-Vermeidung |
-| Verarbeitung | Synchron (Flask) | n8n wartet auf Ergebnis für Claude Prompt |
+| Verarbeitung | Synchron (Flask) | n8n wartet auf Ergebnis für AI Prompt |
 | Queue (Redis) | NICHT nötig | n8n gibt den Takt vor, kein async nötig |
 | Jitter | 0.5-2s zwischen Emails | Anti-Blacklisting, "menschliches" Verhalten |
 | Protokollierung | Sofort in Supabase | Kein Datenverlust bei Absturz |
@@ -411,11 +411,11 @@ def contact_form(request):
 | Risiko | Mitigation |
 |--------|-----------|
 | IP Blacklisting durch SMTP Checks | Jitter + Batching + max 100 Checks/Tag |
-| False Positives (echte Email als Spam) | Claude als Schiedsrichter, nicht automatisch blockieren |
+| False Positives (echte Email als Spam) | AI als Schiedsrichter, nicht automatisch blockieren |
 | SAP Sandbox Emails alle Fake | Training auf Features die auch ohne echte Emails funktionieren |
 | Entropy bei osteuropäischen Namen hoch | Schwellwert anpassen, nicht alleine entscheidend |
 | Mail Server Catch-All (immer 250) | SMTP alleine nicht entscheidend, Kombination zählt |
-| Claude Rate Limit | Nur bei Alarm aufrufen, nicht für jede Email |
+| AI Rate Limit | Nur bei Alarm aufrufen, nicht für jede Email |
 
 ---
 
@@ -439,8 +439,8 @@ def contact_form(request):
 Dieses Projekt demonstriert:
 → Mehrstufige Verifikation (Layer 1-5)
 → ML (Isolation Forest) für Mustererkennung
-→ AI (Claude) für Explainable Decisions
-→ Kostenoptimierung (Claude nur bei Bedarf)
+→ AI  für Explainable Decisions
+→ Kostenoptimierung (AI nur bei Bedarf)
 → Echtes Problem gelöst (Portfolio Spam)
 → Produktionsreif (Django Integration)
 → Übertragbar auf AML, KYC, Fraud Detection
@@ -509,7 +509,7 @@ Layer 1-4 prüfen
     ↓
 Alle OK → ✅ durchlassen
     ↓ Alarm
-Claude entscheidet
+AI entscheidet
     ↓
     ┌──────────┴──────────┐
     ↓                     ↓
@@ -627,7 +627,7 @@ Phase 1 — Heute:
 1. Entropy Check in Flask /verify einbauen
 2. TLD Risk Score Mapping erstellen
 3. n8n Workflow bauen
-4. Claude Integration
+4. AI Integration
 5. Testen
 
 Phase 2 — Morgen:
