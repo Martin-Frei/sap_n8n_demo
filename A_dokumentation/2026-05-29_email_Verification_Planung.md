@@ -8,7 +8,7 @@
 Eine mehrstufige Email-Verifikation die:
 1. Spam und Fake-Emails automatisch erkennt
 2. In das Portfolio (martin-freimuth.dev) integriert wird
-3. Als eigenständiges Projekt für Hawk demonstrierbar ist
+3. Als eigenständiges Fraud Detection Projekt demonstrierbar ist
 4. API-Kosten minimiert durch intelligente Layer-Logik
 
 ---
@@ -448,5 +448,202 @@ Dieses Projekt demonstriert:
 
 ---
 
-*Geplant am 30.05.2026 — Email Verification Pipeline*
-*Hacker Pschorr + Emmentaler + Tullamore DEW Edition 🍺🧀🥃*
+## 🔄 Human-in-the-Loop (HIL) — Whitelist & Selbstlernendes System
+
+### Die Idee
+
+Das System markiert eine Email als Fraud/Spam — aber was wenn es falsch liegt?
+Ein Kunde mit exotischem Namen wird fälschlicherweise blockiert.
+
+**Lösung:** Der Mensch kann korrigieren und das System lernt daraus.
+
+```
+Das ist Human-in-the-Loop (HIL):
+→ der Mensch korrigiert das Modell
+→ das Modell lernt aus den Korrekturen
+→ wird mit der Zeit besser
+→ genau so machen es Produktionssysteme!
+```
+
+### Ablauf
+
+```
+1. Email wird als SPAM/VERDÄCHTIG markiert
+2. Digest Email an Admin enthält Whitelist-Link:
+   
+   "Falsch erkannt? Hier klicken zum Whitelisten:"
+   https://localhost:5001/whitelist?token=abc123&email=xyz@firma.de
+
+3. Admin klickt → Flask:
+   → Email wird in Whitelist gespeichert
+   → Token wird ungültig (einmalig!)
+   → Isolation Forest Retraining wird angestoßen
+
+4. Nächstes Mal:
+   → gleiche Email → Whitelist Check → ✅ sofort durchlassen
+   → ähnliche Emails → Isolation Forest kennt das Muster
+```
+
+### Token Absicherung
+
+```
+Problem:  Was wenn die Digest Email in falsche Hände gerät?
+Lösung:   Token ist einmalig + zeitlich begrenzt
+
+→ UUID4 generieren (nicht ratbar)
+→ in Supabase speichern mit Ablaufdatum (24h)
+→ nach Klick → Token als "used" markiert → ungültig
+→ nach 24h → Token läuft automatisch ab
+→ kein Missbrauch möglich
+```
+
+### Erweiterter Flow mit Whitelist
+
+```
+Email kommt rein
+    ↓
+Whitelist Check → auf der Liste?
+    ↓ Ja → ✅ sofort durchlassen (kein Layer Check nötig)
+    ↓ Nein
+Layer 1-4 prüfen
+    ↓
+Alle OK → ✅ durchlassen
+    ↓ Alarm
+Claude entscheidet
+    ↓
+    ┌──────────┴──────────┐
+    ↓                     ↓
+SPAM/BLOCK            ECHT/OK
+    ↓                     ↓
+blockieren            durchlassen
++ Digest Email
++ Whitelist-Link
+    ↓
+Admin klickt?
+    ↓ Ja
+Whitelist + Retrain
+    ↓
+System lernt dazu!
+```
+
+### Isolation Forest lernt selbst dazu
+
+```
+Training Woche 1:
+→ Modell kennt nur SAP Daten + Kaggle Dataset
+→ "Krysztof Brzęczyszczykiewicz" → VERDÄCHTIG (hohe Entropy)
+
+Admin whitelistet → Retraining
+
+Training Woche 2:
+→ Modell kennt jetzt auch osteuropäische Namen
+→ "Krysztof Brzęczyszczykiewicz" → ✅ NORMAL
+→ ähnliche Namen werden auch akzeptiert
+```
+
+### Neue Flask Routen
+
+```python
+# Whitelist-Link aus Email klicken
+GET  /whitelist?token=xxx&email=yyy
+
+# Prüfen ob Email auf Whitelist steht
+POST /whitelist/check
+
+# Isolation Forest mit Whitelist Daten neu trainieren
+POST /retrain-email
+```
+
+### Neue Supabase Tabellen
+
+```sql
+-- Whitelist: vertrauenswürdige Emails
+CREATE TABLE email_whitelist (
+    id BIGSERIAL PRIMARY KEY,
+    email TEXT UNIQUE,
+    domain TEXT,
+    added_by TEXT,              -- 'manual' oder 'hil'
+    added_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Whitelist Tokens: Einmal-Links für Admin
+CREATE TABLE whitelist_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    token TEXT UNIQUE,
+    email TEXT,
+    expires_at TIMESTAMPTZ,     -- gültig für 24h
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Trainingsdaten — Woher?
+
+```
+Problem:  SAP Sandbox hat nur Fake Emails
+          → schlechtes Training
+
+Lösung:   Mehrere Quellen kombinieren!
+```
+
+| Quelle | Vorteil | Nachteil |
+|--------|---------|----------|
+| Kaggle Spam Dataset | Gelabelt, kostenlos, groß | Nicht deine Kunden |
+| Portfolio Kontaktformular | Echte Anfragen, wächst organisch | Anfangs wenig Daten |
+| Whitelist (HIL) | Korrigierte Daten, hohe Qualität | Braucht Zeit zum Aufbau |
+| Eigene Kontakte (Gmail/GMX) | 100% echte Emails | Privacy beachten! |
+
+**Empfehlung: Kaggle + Portfolio + Whitelist**
+
+```
+Start:      Kaggle Dataset zum initialen Trainieren
+Dann:       Portfolio Daten kommen organisch dazu
+Ongoing:    Whitelist wächst durch HIL Korrekturen
+Ergebnis:   Modell wird mit jedem Lauf besser!
+```
+
+### Warum das professionell ist
+
+```
+Ohne HIL:
+→ Modell macht Fehler
+→ bleibt bei seinen Fehlern
+→ User frustriert
+
+Mit HIL:
+→ Modell macht Fehler
+→ User korrigiert mit einem Klick
+→ Modell lernt
+→ gleicher Fehler passiert nicht nochmal
+→ Vertrauen wächst
+```
+
+---
+
+## 🔜 Nächste Schritte (aktualisiert)
+
+```
+Phase 1 — Heute:
+1. Entropy Check in Flask /verify einbauen
+2. TLD Risk Score Mapping erstellen
+3. n8n Workflow bauen
+4. Claude Integration
+5. Testen
+
+Phase 2 — Morgen:
+6. Isolation Forest für Emails trainieren (Kaggle)
+7. Whitelist Routen in Flask
+8. Token Generierung + Absicherung
+9. Django Portfolio Integration
+10. Digest mit Whitelist-Links
+
+Phase 3 — Laufend:
+11. HIL Korrekturen sammeln
+12. Wöchentliches Retraining
+13. Modell wird besser über Zeit
+```
+
+---
+
+*Geplant am 29. +  30.05.2026 — Email Verification Pipeline*    
+*"Hacker Pschorr + Emmentaler + Tullamore D.E.W." Edition 🍺🧀🥃*
