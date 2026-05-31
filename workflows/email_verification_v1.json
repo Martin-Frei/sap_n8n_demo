@@ -1,0 +1,303 @@
+{
+  "name": "email_verification_v1",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1856,
+        -608
+      ],
+      "id": "e1f55df3-820c-45f5-afe5-8149a5699678",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_AddressEmailAddress",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "$top",
+              "value": "5"
+            },
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1680,
+        -608
+      ],
+      "id": "f24adf74-b0dc-4c89-ade5-f558ec266fd5",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bya0S9uPze6BctdS",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.d.results;\n\nreturn results.map(item => ({\n  json: {\n    EmailAddress: item.EmailAddress,\n    AddressID:    item.AddressID,\n    Person:       item.Person,\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        -608
+      ],
+      "id": "8f571f26-e5a5-449e-ae42-6cdcbd7767b5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/verify",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($input.all().map(i => i.json)) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1360,
+        -608
+      ],
+      "id": "6d07c1b5-6165-46cf-98dc-58e3175a6a56",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4b7d9ae8-7afd-454e-b1b1-4434c2e2a715",
+              "leftValue": "={{ $json.needs_claude }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1072,
+        -608
+      ],
+      "id": "4d26f5dd-aaf0-4a14-883f-8f1a29da868c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={   \"model\": \"claude-haiku-4-5-20251001\",   \"max_tokens\": 1000,   \"messages\": [     {       \"role\": \"user\",       \"content\": \"Du bist ein Email Fraud Detection Experte.\\n\\nAnalysiere diese Email-Adresse:\\nEmail: {{ $json.email }}\\nDomain: {{ $json.domain }}\\nEntropy Status: {{ $json.entropy_status }}\\nISO Score: {{ $json.iso_score }}\\nMX Status: {{ $json.mx_status }}\\n\\nAntworte NUR mit JSON:\\n{\\\"verdict\\\": \\\"spam\\\" oder \\\"normal\\\", \\\"reason\\\": \\\"kurze Begründung\\\", \\\"confidence\\\": 0.0-1.0}\"     }   ] }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -912,
+        -720
+      ],
+      "id": "37ec5c92-41bd-4155-85f9-09d3155a7159",
+      "name": "HTTP Request2",
+      "credentials": {
+        "anthropicApi": {
+          "id": "jC7d3PjlvyMXkuBY",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "email_checks"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        -512
+      ],
+      "id": "b269945c-9a03-4d35-ba05-5bd1930314c2",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "VejGvZyPssVn2en1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// results Array aufteilen in einzelne Items\nconst data = $input.first().json;\n\nreturn data.results.map(item => ({\n  json: item\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1232,
+        -608
+      ],
+      "id": "d8cd88ee-9a12-40d4-a660-e0a95b26a379",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const text = item.json.content[0].text;\n  const clean = text.replace(/```json\\n?|\\n?```/g, '').trim();\n  const parsed = JSON.parse(clean);\n  return {\n    json: {\n      verdict:    parsed.verdict,\n      reason:     parsed.reason,\n      confidence: parsed.confidence,\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        -720
+      ],
+      "id": "36a63b54-fad8-41ae-8d8d-8eb821528be4",
+      "name": "Code in JavaScript2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "cc5622ee-cd81-4dca-8d30-de20a0c3cff3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
+  },
+  "id": "dUhG0gtcvhVawSX6",
+  "tags": []
+}

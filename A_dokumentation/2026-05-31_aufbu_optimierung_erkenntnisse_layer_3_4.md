@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Heute wurde die Email Verification Pipeline um Layer 3 (Entropy Check) 
+Heute Vormittag wurde die Email Verification Pipeline um Layer 3 (Entropy Check) 
 und Layer 4 (Isolation Forest) erweitert. Dazu wurde ein eigener 
 synthetischer Email-Datensatz Generator entwickelt.
 
@@ -263,7 +263,7 @@ sap_n8n_demo/
 │   │   ├── email_forest_train.py ← Layer 4 Training
 │   │   └── test_layer34.py       ← Visueller Test
 │   └── predict/
-│       └── predict_server.py     ← Flask Server (alle 5 Layer)
+│       └── predict_server.py     ← Layer 1-4 + Layer 6 (HIL Endpoints)
 ├── models/
 │   ├── sap_isolation_forest.pkl
 │   ├── email_isolation_forest.pkl ← NEU
