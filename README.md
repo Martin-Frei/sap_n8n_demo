@@ -1,6 +1,6 @@
 # 🚨 SAP Fraud Detection Pipeline
 
-**Automated anomaly detection for SAP Sales Orders using Machine Learning and Explainable AI**
+**Automated anomaly detection for SAP Sales Orders and Email Verification using Machine Learning and Explainable AI**
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
@@ -8,72 +8,129 @@
 ![SAP](https://img.shields.io/badge/SAP-0FAAFF?style=for-the-badge&logo=sap&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude_AI-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
 
 ---
 
 ## 📋 Überblick
 
-Diese Pipeline erkennt automatisch verdächtige Bestellungen in SAP Sales Order Daten. Sie kombiniert klassisches Machine Learning (Isolation Forest) mit Explainable AI (Claude) — jede erkannte Anomalie wird nicht nur markiert, sondern auf Deutsch erklärt und mit einer Handlungsempfehlung versehen.
+Dieses Projekt demonstriert zwei vollständige Fraud Detection Pipelines:
 
-**Das System beantwortet drei Fragen:**
-- **Was** ist auffällig? → Isolation Forest erkennt statistische Ausreißer
-- **Warum** ist es auffällig? → Claude AI erklärt die Anomalie
-- **Was tun?** → Automatische Risikobewertung + Handlungsempfehlung
+**Pipeline 1 — SAP Sales Order Anomalie Detection**
+Erkennt automatisch verdächtige Bestellungen in SAP Sales Order Daten. Kombiniert Isolation Forest mit Claude AI — jede Anomalie wird erklärt und mit Handlungsempfehlung versehen.
+
+**Pipeline 2 — Email Verification (5-Layer)**
+Prüft Email-Adressen aus SAP Business Partner Daten auf Validität und Spam-Muster. Kombiniert DNS, SMTP, Mathematik, ML und AI zu einer Defense-in-Depth Architektur.
 
 ---
 
-## 🏗️ Architektur
+## 🏗️ Gesamt-Architektur
 
 ```
 SAP S/4HANA (OData API)
-        ↓ inkrementeller Datenabruf
+        ↓
 n8n Workflow Engine
-        ↓ Datentransformation
-    ┌───┴───────────────┐
-    ↓                   ↓
-Supabase            Flask API
-(PostgreSQL)        (Isolation Forest)
-Orders speichern    Anomalien erkennen
-                        ↓
-                   Claude AI (Haiku)
-                   Explainable AI
-                        ↓
-                   Supabase
-                   Anomalien speichern
-                        ↓
-                   Email Digest
-                   Historie + Häufungscheck
+        ↓
+    ┌───┴──────────────────────┐
+    ↓                          ↓
+Pipeline 1                 Pipeline 2
+Sales Order                Email Verification
+Anomalie Detection         5-Layer System
+    ↓                          ↓
+Flask API (Port 5001)      Flask API (Port 5001)
+/predict                   /verify
+    ↓                          ↓
+Isolation Forest           Layer 1: MX Check
++ Claude AI                Layer 2: SMTP Check
+    ↓                      Layer 3: Entropy Check
+Supabase                   Layer 4: Isolation Forest
+sap_order_anomalies        Layer 5: Claude AI
+                               ↓
+                           Supabase
+                           email_checks
 ```
 
 ---
 
-## 🔍 Drei-Layer Anomalieerkennung
+## 🔍 Pipeline 1 — Sales Order Anomalie Detection
+
+### Drei-Layer Erkennung
 
 | Layer | Technologie | Funktion |
 |-------|------------|----------|
-| **Layer 1** | Isolation Forest | Statistische Ausreißer in Bestelldaten erkennen |
-| **Layer 2** | Claude AI | Jede Anomalie auf Deutsch erklären + Handlungsempfehlung |
-| **Layer 3** | Häufungsanalyse | Muster über Zeit erkennen (Peaks, Trends, Wochentage) |
+| **Layer 1** | Isolation Forest | Statistische Ausreißer in Bestelldaten |
+| **Layer 2** | Claude AI | Anomalie erklären + Handlungsempfehlung |
+| **Layer 3** | Häufungsanalyse | Muster über Zeit (Peaks, Trends) |
 
----
+### Features für Isolation Forest
+| Feature | Beschreibung |
+|---------|-------------|
+| `net_amount` | Bestellbetrag — extreme Werte |
+| `customer_encoded` | Kundenverhalten — unbekannte Kunden |
+| `user_encoded` | Ersteller — ungewöhnliche User |
 
-## 📊 Ergebnisse
-
-Trainiert auf **2.000 SAP Sales Orders**, getestet mit **12.000+ Orders**:
-
+### Ergebnisse
 ```
-✅ 800 Orders verarbeitet
-✅ 9 Anomalien automatisch erkannt (1.13% Rate)
-✅ Verteilung: 0 KRITISCH | 6 VERDÄCHTIG | 3 PRÜFEN
+✅ 900 Orders verarbeitet
+✅ 12 Anomalien erkannt (1.3% Rate)
 ✅ Jede Anomalie mit Claude AI Statement
 ✅ Automatischer HTML Email Digest
 ```
 
-**Beispiel Claude Analyse:**
-> *Order 1647 | USCU_S03 | 309.465 USD*
-> "Der Betrag von 309.465 USD weicht signifikant vom normalen Bestellmuster ab.
-> Empfehlung: Sofortige Verifizierung durch Compliance-Team."
-> **Risiko: VERDÄCHTIG**
+---
+
+## 📧 Pipeline 2 — Email Verification (5-Layer)
+
+### Defense in Depth Architektur
+
+| Layer | Technologie | Funktion | Training nötig? |
+|-------|------------|----------|----------------|
+| **Layer 1** | DNS MX Check | Domain hat Mailserver? | Nein |
+| **Layer 2** | SMTP Handshake | Mailbox existiert? | Nein |
+| **Layer 3** | Entropy Check | Struktur verdächtig? (Mathematik) | Nein |
+| **Layer 4** | Isolation Forest | ML Anomalie Detection | Ja |
+| **Layer 5** | Claude AI | Kontext + Erklärung | Nein |
+| **Layer 6** | Human in the Loop | Admin Entscheidung (geplant) | Nein |
+
+### Layer 5 Regel
+```
+🟡 SLIGHT oder 🔴 SUSPICIOUS bei Layer 3 oder 4 → Claude prüft
+🟢 OK bei beiden → nur Layer 1+2 als Absicherung
+```
+
+### Entropy Check (Layer 3)
+```
+< 1.0          → 🔴 SUSPICIOUS  (zu simpel: aaaaaaa@...)
+1.0 - 3.5      → 🟢 OK          (normal: martin.mueller@...)
+3.5 - 3.8      → 🟡 SLIGHT      (leicht erhöht)
+> 3.8          → 🔴 SUSPICIOUS  (zu chaotisch: xk7f2q9p@...)
+```
+
+### Email Isolation Forest Features
+```python
+feature_cols = [
+    'local_entropy', 'domain_entropy', 'digit_ratio',
+    'special_chars', 'local_length', 'domain_length',
+    'is_trusted_domain', 'is_suspicious_tld',
+    'has_dot', 'has_underscore',
+    'shortest_part', 'longest_part'
+]
+```
+
+### Testergebnis (50 Emails)
+```
+Gesamt korrekt:   44/50 (88%)
+Spam erkannt:     4/5
+False Positives:  5/45 → gehen zu Claude (Layer 5)
+```
+
+### DSGVO Konzept
+```
+Email wird NIE gespeichert!
+→ simpleHash für Wiedererkennung (Whitelist)
+→ Features anonymisiert in Supabase
+→ Löschung nach 90 Tagen (expires_at)
+```
 
 ---
 
@@ -81,12 +138,13 @@ Trainiert auf **2.000 SAP Sales Orders**, getestet mit **12.000+ Orders**:
 
 | Komponente | Technologie | Zweck |
 |-----------|------------|-------|
-| Datenquelle | SAP S/4HANA Cloud (OData V2) | Sales Order Daten |
+| Datenquelle | SAP S/4HANA Cloud (OData V2) | Orders + Business Partner |
 | Orchestrierung | n8n (Self-Hosted) | Workflow Automation |
-| ML Modell | Isolation Forest (scikit-learn) | Anomalieerkennung |
+| ML Modell 1 | Isolation Forest (scikit-learn) | SAP Order Anomalieerkennung |
+| ML Modell 2 | Isolation Forest (scikit-learn) | Email Anomalieerkennung |
 | AI Erklärung | Claude Haiku (Anthropic API) | Explainable AI |
 | Prediction API | Flask (Python) | ML Model Serving |
-| Datenbank | Supabase (PostgreSQL) | Orders + Anomalien |
+| Datenbank | Supabase (PostgreSQL) | Orders + Anomalien + Email Checks |
 | Benachrichtigung | GMX SMTP | HTML Email Digest |
 
 ---
@@ -95,32 +153,44 @@ Trainiert auf **2.000 SAP Sales Orders**, getestet mit **12.000+ Orders**:
 
 ```
 sap_n8n_demo/
-├── A_dokumetiation/
+├── A_dokumentation/
 │   ├── 2026-05-15_sap_n8n_claude_fraud.md
 │   ├── 2026-05-20_sap_n8n_order_detection.md
 │   ├── 2026-05-21_sap_n8n_order_detection.md
-│   └── Startcode_batDatei.md
+│   ├── 2026-05-29_email_Verification_Planung.md
+│   ├── 2026-05-31_aufbau_optimierung_erkenntniss_layer_3_4.md
+│   └── 2026-05-31_email_verification_workflow_komplett.md
 ├── data/
-│   └── sap_order_raw.csv
+│   └── test_emails.json          ← 50 Test Emails
 ├── models/
 │   ├── sap_isolation_forest.pkl
 │   ├── label_encoder_customer.pkl
-│   └── label_encoder_user.pkl
+│   ├── label_encoder_user.pkl
+│   ├── email_isolation_forest.pkl ← NEU
+│   └── email_feature_cols.pkl     ← NEU
 ├── python/
-│   ├── requirements.txt
+│   ├── generate/
+│   │   ├── generator.py          ← Email Generator (18 Kulturkreise)
+│   │   ├── config.yaml           ← Konfiguration
+│   │   └── examples/
+│   │       └── sample_1000.csv   ← Trainingsdaten
 │   ├── predict/
-│   │   └── predict_server.py
+│   │   └── predict_server.py     ← Flask Server (Layer 1-4 + Layer 6)
 │   ├── training/
-│   │   └── isolation_forest_train.py
-│   └── utils/
-│       └── sales_order_eda.py
+│   │   ├── isolation_forest_train.py
+│   │   ├── email_forest_train.py  ← NEU
+│   │   └── test_layer34.py        ← NEU visueller Test
+│   ├── utils/
+│   │   └── sales_order_eda.py
+│   └── requirements.txt
 ├── workflows/
 │   ├── sap_claude_analyse_v1.json
-│   └── sap_order_validating.json
+│   ├── sap_order_validating.json
+│   └── email_verification_v1.json ← NEU
 ├── .env                 ← API Keys (nicht in Git)
 ├── .gitignore
 ├── README.md
-└── start_n8n.bat        ← n8n mit Node v22 starten
+└── start_n8n.bat
 ```
 
 ---
@@ -156,109 +226,88 @@ SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_KEY=dein_supabase_key
 ```
 
-### 4. n8n starten
+### 4. Modelle trainieren
 ```bash
-start_n8n.bat
-# oder
-& "pfad\zu\node22\node.exe" "pfad\zu\n8n\bin\n8n"
+# SAP Order Modell
+python python/training/isolation_forest_train.py
+
+# Email Generator
+cd python/generate
+python generator.py
+cd ../..
+
+# Email Modell
+python python/training/email_forest_train.py
 ```
 
-### 5. Flask Prediction Server starten
+### 5. Flask Server starten
 ```bash
 python python/predict/predict_server.py
 # → läuft auf http://localhost:5001
+# ✅ SAP Modell geladen
+# ✅ Email Modell geladen
 ```
 
-### 6. Workflow importieren
+### 6. n8n starten
+```bash
+start_n8n.bat
+```
+
+### 7. Workflows importieren
 ```
 n8n → Import from File → workflows/sap_order_validating.json
+n8n → Import from File → workflows/email_verification_v1.json
 ```
 
 ---
-
-## 📧 Email Digest Beispiel
-
-Der automatische Digest enthält:
-
-| Sektion | Inhalt |
-|---------|--------|
-| 📊 Datenbestand | Gesamtzahl Orders, Zeitraum, Orders/Tag |
-| 📈 Anomalie Historie | Gesamtzahl, Rate, Verteilung (KRITISCH/VERDÄCHTIG/PRÜFEN) |
-| 🔥 Top 5 Anomalie Tage | Tage mit den meisten Anomalien |
-| 🔍 Häufungscheck | Vergleich heute vs. Durchschnitt |
-| 🚨 Letzte 10 Anomalien | Detail mit Order, Kunde, Betrag, Score, Risiko |
-
----
-
-## 🔄 Workflow Design (2-Wege-Strategie)
-
-### Workflow A — Täglicher Live-Check
-```
-1. Supabase → letztes bekanntes Datum
-2. SAP OData → nur neue Orders seit letztem Datum
-3. Supabase → neue Orders speichern
-4. Flask → Isolation Forest predict()
-5. Claude → Anomalien erklären (1 API Call für alle)
-6. Supabase → Anomalien + Statement speichern
-7. Email → HTML Digest versenden
-```
-
-### Workflow B — Wöchentliches Retraining
-```
-1. Supabase → alle historischen Orders laden
-2. Isolation Forest → model.fit() neu trainieren
-3. joblib.dump() → Modell überschreiben
-```
-
----
-
-## 🧠 Isolation Forest — Wie es funktioniert
-
-Das Modell wurde mit 2.000 SAP Orders trainiert und erkennt Anomalien anhand von:
-
-| Feature | Beschreibung |
-|---------|-------------|
-| `net_amount` | Bestellbetrag — extreme Werte werden erkannt |
-| `customer_encoded` | Kundenverhalten — unbekannte oder untypische Kunden |
-| `user_encoded` | Ersteller — ungewöhnliche User-Aktivitäten |
-
-**Konfiguration:**
-```python
-IsolationForest(
-    contamination=0.05,    # 5% erwartete Anomalierate
-    n_estimators=100,      # 100 Entscheidungsbäume
-    random_state=42
-)
-```
-
-**Validierung per PowerShell:**
-```
-FAKE_CUSTOMER + 500k USD  → KRITISCH  (Score: -0.179)
-Bekannter Kunde + 0.01    → VERDÄCHTIG (Score: -0.085)
-Bekannter Kunde + 425k    → KRITISCH  (Score: -0.110)
-Normaler Betrag           → VERDÄCHTIG (Score: -0.051)
-```
 
 ## 📸 Screenshots
 
-### n8n Workflow
-![Workflow](screenshots/n8n_workflow.jpg)
+### Pipeline 1 — SAP Order Workflow
+![SAP Workflow](screenshots/n8n_workflow.jpg)
 
 ### Email Digest
-![Digest](screenshots/email_digest.jpg)
+![Email Digest](screenshots/email_digest.jpg)
 
-### Anomalien in Supabase
-![Supabase](screenshots/supabase_anomalien.jpg)
+### SAP Anomalien in Supabase
+![Supabase Anomalien](screenshots/supabase_anomalien.jpg)
+
+### Pipeline 2 — Email Verification Workflow
+![Email Workflow](screenshots/n8n_email_workflow.png)
+
+### Layer 3+4 Test Output
+![Test Layer 3+4](screenshots/test_layer34_output.png)
+
+### Email Checks in Supabase
+![Supabase Email](screenshots/supabase_email_checks.png)
+
+---
+
+## 🌍 Email Generator — Open Source
+
+Der synthetische Email-Adress-Generator ist als eigenes Tool verfügbar:
+
+```
+python/generate/
+├── generator.py   ← konfigurierbar via config.yaml
+└── config.yaml    ← 18 Kulturkreise, Spam Patterns, Domains
+```
+
+**Features:**
+- 180 Vornamen + 180 Nachnamen aus 18 Kulturkreisen
+- RFC 2606 konforme Domains (nie erreichbar, nie echt!)
+- 5 verschiedene Spam-Patterns
+- Kein kultureller Bias — Struktur statt Namen bewerten
 
 ---
 
 ## ⚠️ Bekannte Limitierungen
 
-**SAP Sandbox Datenkonsistenz:**
-Sales Order API und Business Partner API verwenden unterschiedliche Test-IDs — ein direkter JOIN ist in der Sandbox nicht möglich. In einem produktiven SAP System sind alle IDs konsistent verknüpft.
+**SAP Sandbox:**
+Die Sandbox enthält statische Testdaten. In Produktion würde der Workflow täglich neue Orders und Business Partner verarbeiten.
 
-**SAP Sandbox Daten:**
-Die Sandbox enthält statische Testdaten (Aug–Nov 2016). In Produktion würde der Workflow täglich neue Orders verarbeiten.
+**Email Modell:**
+Trainiert auf synthetischen Daten → 88% Erkennungsrate. Mit echten Produktionsdaten (Honeypot, HIL Feedback) steigt die Genauigkeit.
 
 ---
 
@@ -266,12 +315,13 @@ Die Sandbox enthält statische Testdaten (Aug–Nov 2016). In Produktion würde 
 
 Detaillierte Schritt-für-Schritt Dokumentation in `A_dokumentation/`:
 
-- **Tag 1:** SAP API Setup, n8n Installation, erster Claude Workflow
-- **Tag 2:** Sales Order Pipeline, EDA, Isolation Forest Training
-- **Tag 3:** Flask Server, End-to-End Pipeline, Email Digest
-
----
-
+| Datum | Thema |
+|-------|-------|
+| 2026-05-15 | SAP API Setup, n8n, erster Claude Workflow |
+| 2026-05-20 | Sales Order Pipeline, EDA, Isolation Forest |
+| 2026-05-21 | Flask Server, End-to-End, Email Digest |
+| 2026-05-29 | Email Verification Planung, 5-Layer Konzept |
+| 2026-05-31 | Layer 3+4 Aufbau, Generator, n8n Workflow |
 
 ---
 
@@ -279,21 +329,22 @@ Detaillierte Schritt-für-Schritt Dokumentation in `A_dokumentation/`:
 
 **For my friends and tutors**
 
-This project demonstrates an automated Fraud Detection Pipeline for SAP Sales Orders:
+This project demonstrates two automated Fraud Detection Pipelines built with SAP, n8n, Python, and Claude AI:
 
-- **Data Source:** SAP S/4HANA Cloud via OData API
-- **ML Model:** Isolation Forest (scikit-learn) for anomaly detection
-- **Explainable AI:** Claude Haiku explains every anomaly in plain language
-- **Orchestration:** n8n workflow engine
-- **Storage:** Supabase (PostgreSQL)
-- **Reporting:** Automated HTML email digest with history and trend analysis
+**Pipeline 1 — SAP Sales Order Anomaly Detection:**
+- Isolation Forest detects statistical outliers in order data
+- Claude AI explains every anomaly in plain language
+- Automated HTML email digest with history and trend analysis
 
-**Three-Layer Detection:**
-1. **Isolation Forest** — finds statistical outliers in order data
-2. **Claude AI** — explains why each order is suspicious
-3. **Frequency Analysis** — detects unusual patterns over time
+**Pipeline 2 — Email Verification (5-Layer Defense in Depth):**
+- Layer 1: DNS MX Check
+- Layer 2: SMTP Handshake
+- Layer 3: Entropy Check (mathematics, no training needed)
+- Layer 4: Isolation Forest (trained on 1000 synthetic emails, 18 cultural backgrounds)
+- Layer 5: Claude AI (context + explanation for borderline cases)
 
-The first workflow (Email Fraud Detection) was built in one evening. The full Sales Order Anomaly Detection pipeline took two mornings to complete.
+**Key insight:** No single layer is perfect. Together they achieve 88% accuracy — exactly like real AML detection systems.
+
 ---
 
 ## 👤 Autor

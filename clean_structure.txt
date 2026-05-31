@@ -6,13 +6,21 @@
 │   ├── 2026-05-20_sap_n8n_order_detection.md
 │   ├── 2026-05-21_sap_n8n_order_detection.md
 │   ├── 2026-05-29_email_Verification_Planung.md
+│   ├── 2026-05-31_aufbu_optimierung_erkenntnisse_layer_3_4.md
+│   ├── 2026-05-31_Layer_5_and_supabase.md
+│   ├── 2026-05-31_result_saved_supabase.md
+│   ├── 2026-05-31_supabase_table_erstellen.md
 │   └── Startcode_batDatei.md
 ├── data/
+│   └── test_emails.json
 ├── models/
+│   ├── email_feature_cols.pkl
+│   ├── email_isolation_forest.pkl
 │   ├── label_encoder_customer.pkl
 │   ├── label_encoder_user.pkl
 │   └── sap_isolation_forest.pkl
 ├── python/
+│   ├── generate/
 │   ├── predict/
 │   ├── training/
 │   ├── utils/
@@ -29,5 +37,6 @@
 │   ├── .gitignore
 │   └── pyvenv.cfg
 └── workflows/
+    ├── email_verification_v1.json
     ├── sap_claude_analyse_v1.json
     └── sap_order_validating.json

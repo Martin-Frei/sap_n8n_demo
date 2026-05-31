@@ -42,7 +42,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1072,
+        -1552,
         -608
       ],
       "id": "4d26f5dd-aaf0-4a14-883f-8f1a29da868c",
@@ -68,7 +68,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1936,
+        -2000,
         -608
       ],
       "id": "f24adf74-b0dc-4c89-ade5-f558ec266fd5",
@@ -87,8 +87,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1696,
-        -608
+        -1888,
+        -832
       ],
       "id": "8f571f26-e5a5-449e-ae42-6cdcbd7767b5",
       "name": "JS Split for flask"
@@ -106,7 +106,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1472,
+        -1776,
         -608
       ],
       "id": "6d07c1b5-6165-46cf-98dc-58e3175a6a56",
@@ -119,8 +119,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1232,
-        -608
+        -1664,
+        -816
       ],
       "id": "d8cd88ee-9a12-40d4-a660-e0a95b26a379",
       "name": "JS split array to items"
@@ -149,8 +149,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -960,
-        -720
+        -1440,
+        -816
       ],
       "id": "37ec5c92-41bd-4155-85f9-09d3155a7159",
       "name": "Claude call",
@@ -168,8 +168,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -848,
-        -864
+        -1216,
+        -816
       ],
       "id": "36a63b54-fad8-41ae-8d8d-8eb821528be4",
       "name": "JS split claude ti items"
@@ -183,11 +183,60 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        -736,
-        -640
+        -1104,
+        -624
       ],
       "id": "11da3358-9feb-4ba3-b596-5cd84ca4bced",
       "name": "Merge all true data"
+    },
+    {
+      "parameters": {
+        "jsCode": "function simpleHash(str) {\n    let hash = 0;\n    for (let i = 0; i < str.length; i++) {\n        const char = str.charCodeAt(i);\n        hash = ((hash << 5) - hash) + char;\n        hash = hash & hash;\n    }\n    return Math.abs(hash).toString(16).padStart(8, '0');\n}\n\nreturn $input.all().map(item => ({\n    json: {\n        ...item.json,\n        email_hash: simpleHash(item.json.email),\n        verdict: item.json.verdict || 'normal',\n       claude_verdict: item.json.needs_claude === true && item.json.verdict ? \n    item.json.verdict + ' (' + item.json.confidence + ')' : null,\n        features: JSON.stringify({\n            local_entropy:  item.json.local_entropy,\n            domain_entropy: item.json.domain_entropy,\n            iso_score:      item.json.iso_score,\n            entropy_status: item.json.entropy_status,\n            iso_status:     item.json.iso_status,\n        })\n    }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        -416
+      ],
+      "id": "5f59076e-9765-4b8c-a567-0193fa60de57",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fromEmail": "mat.frei@gmx.de",
+        "toEmail": "tsinntal@gmx.de",
+        "html": "=To:      deine@email.de\nSubject: 🚨 Spam erkannt — HIL Prüfung erforderlich\nMessage Type: HTML\nMessage:\n<h2>🚨 Spam Email erkannt</h2>\n<p><b>Email:</b> {{ $json.email }}</p>\n<p><b>Verdict:</b> {{ $json.verdict }}</p>\n<p><b>Claude:</b> {{ $json.claude_verdict }}</p>\n<p><b>Grund:</b> {{ $json.reason }}</p>\n<br>\n<a href=\"{{ $json.whitelist_url }}\">✅ Whitelist</a>\n<a href=\"{{ $json.blacklist_url }}\">❌ Blacklist</a>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -768,
+        -416
+      ],
+      "id": "6b296d83-622c-446e-992d-7cbde5987652",
+      "name": "Digest Email",
+      "webhookId": "2ad0aade-57a5-47cc-9e3a-b1b7584af816",
+      "credentials": {
+        "smtp": {
+          "id": "M2nD4f2EB6jmeCI4",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({\n    json: {\n        ...item.json,\n        hil_token: Math.random().toString(36).substring(2) + Date.now().toString(36),\n        whitelist_url: `http://localhost:5001/whitelist?token=` + Math.random().toString(36).substring(2) + Date.now().toString(36),\n        blacklist_url: `http://localhost:5001/blacklist?token=` + Math.random().toString(36).substring(2) + Date.now().toString(36),\n    }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        -608
+      ],
+      "id": "86eb1257-7a69-47ec-88fd-c5071a5d749e",
+      "name": "create Token"
     },
     {
       "parameters": {
@@ -248,30 +297,17 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -512,
-        -640
+        -768,
+        -816
       ],
       "id": "b269945c-9a03-4d35-ba05-5bd1930314c2",
-      "name": "Create a row",
+      "name": "save merge token",
       "credentials": {
         "supabaseApi": {
           "id": "VejGvZyPssVn2en1",
           "name": "Supabase account"
         }
       }
-    },
-    {
-      "parameters": {
-        "jsCode": "function simpleHash(str) {\n    let hash = 0;\n    for (let i = 0; i < str.length; i++) {\n        const char = str.charCodeAt(i);\n        hash = ((hash << 5) - hash) + char;\n        hash = hash & hash;\n    }\n    return Math.abs(hash).toString(16).padStart(8, '0');\n}\n\nreturn $input.all().map(item => ({\n    json: {\n        ...item.json,\n        email_hash: simpleHash(item.json.email),\n        verdict: item.json.verdict || 'normal',\n       claude_verdict: item.json.needs_claude === true && item.json.verdict ? \n    item.json.verdict + ' (' + item.json.confidence + ')' : null,\n        features: JSON.stringify({\n            local_entropy:  item.json.local_entropy,\n            domain_entropy: item.json.domain_entropy,\n            iso_score:      item.json.iso_score,\n            entropy_status: item.json.entropy_status,\n            iso_status:     item.json.iso_status,\n        })\n    }\n}));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -624,
-        -432
-      ],
-      "id": "5f59076e-9765-4b8c-a567-0193fa60de57",
-      "name": "Code in JavaScript"
     }
   ],
   "pinData": {},
@@ -387,20 +423,41 @@
         ]
       ]
     },
-    "Create a row": {
-      "main": [
-        []
-      ]
-    },
     "Code in JavaScript": {
       "main": [
         [
           {
-            "node": "Create a row",
+            "node": "create Token",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Digest Email": {
+      "main": [
+        []
+      ]
+    },
+    "create Token": {
+      "main": [
+        [
+          {
+            "node": "Digest Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "save merge token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "save merge token": {
+      "main": [
+        []
       ]
     }
   },
@@ -410,7 +467,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "71032cb4-b953-42c1-b513-c88c12f986a2",
+  "versionId": "5d5d20ad-85b0-4b2f-b2d1-c924c57b8730",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
