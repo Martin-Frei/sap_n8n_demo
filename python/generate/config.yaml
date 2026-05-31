@@ -1,0 +1,522 @@
+# ============================================================
+# Email Address Generator — Config
+# ============================================================
+# Hier wird alles eingestellt — kein Python nötig!
+# ============================================================
+
+# ------------------------------------------------------------
+# OUTPUT
+# ------------------------------------------------------------
+output:
+  total_count: 1000          # Gesamtanzahl Emails
+  spam_ratio: 0.10           # 10% Spam = 100 Spam, 900 Normal
+  output_file: "examples/sample_1000.csv"
+  seed: 42                   # Reproduzierbarkeit
+
+# ------------------------------------------------------------
+# DOMAINS — RFC 2606 reserviert (nie erreichbar, nie echt!)
+# ------------------------------------------------------------
+domains:
+  normal:
+    - "example.com"
+    - "example.org"
+    - "example.net"
+    - "test.com"
+    - "example.de"
+    - "example.fr"
+    - "example.it"
+    - "example.es"
+    - "example.co.uk"
+    - "example.com.br"
+    - "example.co.jp"
+    - "example.co.za"
+    - "example.com.au"
+    - "example.pl"
+    - "example.ru"
+
+  spam_tlds:
+    - ".biz"
+    - ".xyz"
+    - ".click"
+    - ".top"
+    - ".win"
+    - ".loan"
+    - ".work"
+    - ".info"
+    - ".online"
+    - ".site"
+
+# ------------------------------------------------------------
+# VORNAMEN — 10 pro Kulturkreis
+# ------------------------------------------------------------
+first_names:
+
+  deutsch:
+    - martin
+    - thomas
+    - stefan
+    - michael
+    - andreas
+    - anna
+    - julia
+    - katharina
+    - sabine
+    - monika
+
+  französisch:
+    - pierre
+    - jean
+    - nicolas
+    - François
+    - baptiste
+    - marie
+    - camille
+    - isabelle
+    - sophie
+    - aurelie
+
+  italienisch:
+    - marco
+    - luca
+    - giovanni
+    - antonio
+    - giuseppe
+    - giulia
+    - francesca
+    - valentina
+    - chiara
+    - alessia
+
+  spanisch:
+    - carlos
+    - alejandro
+    - miguel
+    - javier
+    - diego
+    - maria
+    - lucia
+    - carmen
+    - elena
+    - isabel
+
+  portugiesisch:
+    - pedro
+    - joao
+    - rafael
+    - bruno
+    - ricardo
+    - ana
+    - mariana
+    - beatriz
+    - patricia
+    - fernanda
+
+  osteuropäisch:
+    - dmitri
+    - ivan
+    - wojciech
+    - pavel
+    - mikhail
+    - natasha
+    - katarzyna
+    - olga
+    - svetlana
+    - agnieszka
+
+  russisch:
+    - alexei
+    - nikolai
+    - sergei
+    - vladimir
+    - boris
+    - tatiana
+    - irina
+    - elena
+    - anastasia
+    - ekaterina
+
+  asiatisch_ostasien:
+    - wei
+    - jing
+    - yuki
+    - kenji
+    - hiroshi
+    - mei
+    - sakura
+    - jiwon
+    - minjun
+    - hyun
+
+  asiatisch_südasien:
+    - priya
+    - rahul
+    - amit
+    - vikram
+    - arjun
+    - deepa
+    - anita
+    - sunita
+    - pooja
+    - kavita
+
+  südostasiatisch:
+    - nguyen
+    - thanh
+    - minh
+    - budi
+    - eko
+    - siti
+    - dewi
+    - wati
+    - ahmad
+    - rizki
+
+  afrikanisch_westafrika:
+    - kwame
+    - kofi
+    - chidi
+    - emeka
+    - tunde
+    - amara
+    - fatou
+    - adaeze
+    - ngozi
+    - abena
+
+  afrikanisch_ostafrika:
+    - kipchoge
+    - kamau
+    - wanjiru
+    - mwangi
+    - njoroge
+    - aisha
+    - zawadi
+    - amina
+    - fatuma
+    - rehema
+
+  amerikanisch:
+    - james
+    - robert
+    - william
+    - john
+    - david
+    - jennifer
+    - jessica
+    - ashley
+    - amanda
+    - melissa
+
+  latino:
+    - jorge
+    - luis
+    - roberto
+    - eduardo
+    - fernando
+    - gabriela
+    - daniela
+    - alejandra
+    - valeria
+    - andrea
+
+  arabisch:
+    - mohammed
+    - ahmed
+    - ali
+    - omar
+    - hassan
+    - fatima
+    - aisha
+    - zainab
+    - maryam
+    - nour
+
+  türkisch:
+    - mehmet
+    - mustafa
+    - ahmet
+    - ibrahim
+    - ali
+    - ayse
+    - fatma
+    - zeynep
+    - emine
+    - hatice
+
+  skandinavisch:
+    - erik
+    - lars
+    - bjorn
+    - sven
+    - magnus
+    - ingrid
+    - astrid
+    - sigrid
+    - freya
+    - solveig
+
+  niederländisch:
+    - jan
+    - pieter
+    - willem
+    - dirk
+    - bas
+    - anne
+    - lies
+    - floor
+    - emma
+    - iris
+
+# ------------------------------------------------------------
+# NACHNAMEN — 10 pro Kulturkreis
+# ------------------------------------------------------------
+last_names:
+
+  deutsch:
+    - mueller
+    - schmidt
+    - schneider
+    - fischer
+    - weber
+    - wagner
+    - becker
+    - schulz
+    - hoffmann
+    - braun
+
+  französisch:
+    - martin
+    - bernard
+    - thomas
+    - petit
+    - robert
+    - richard
+    - durand
+    - moreau
+    - simon
+    - laurent
+
+  italienisch:
+    - rossi
+    - ferrari
+    - russo
+    - colombo
+    - ricci
+    - marino
+    - greco
+    - bruno
+    - gallo
+    - conti
+
+  spanisch:
+    - garcia
+    - rodriguez
+    - martinez
+    - lopez
+    - sanchez
+    - gonzalez
+    - perez
+    - hernandez
+    - ramirez
+    - torres
+
+  portugiesisch:
+    - silva
+    - santos
+    - ferreira
+    - oliveira
+    - sousa
+    - rodrigues
+    - costa
+    - martins
+    - jesus
+    - pereira
+
+  osteuropäisch:
+    - kowalski
+    - nowak
+    - wisniewski
+    - wojcik
+    - kowalczyk
+    - kaminski
+    - lewandowski
+    - zielinski
+    - szymanski
+    - wozniak
+
+  russisch:
+    - ivanov
+    - smirnov
+    - kuznetsov
+    - popov
+    - sokolov
+    - lebedev
+    - kozlov
+    - novikov
+    - morozov
+    - petrov
+
+  asiatisch_ostasien:
+    - wang
+    - li
+    - zhang
+    - liu
+    - chen
+    - yang
+    - tanaka
+    - suzuki
+    - kim
+    - park
+
+  asiatisch_südasien:
+    - sharma
+    - verma
+    - patel
+    - singh
+    - kumar
+    - gupta
+    - joshi
+    - mehta
+    - shah
+    - chopra
+
+  südostasiatisch:
+    - nguyen
+    - tran
+    - pham
+    - santoso
+    - wijaya
+    - kusuma
+    - sari
+    - putri
+    - rahman
+    - ibrahim
+
+  afrikanisch_westafrika:
+    - okafor
+    - nwosu
+    - eze
+    - obi
+    - diallo
+    - toure
+    - traore
+    - coulibaly
+    - mensah
+    - asante
+
+  afrikanisch_ostafrika:
+    - kamau
+    - mwangi
+    - odhiambo
+    - otieno
+    - waweru
+    - mutua
+    - ndung'u
+    - kariuki
+    - gitau
+    - njeru
+
+  amerikanisch:
+    - smith
+    - johnson
+    - williams
+    - brown
+    - jones
+    - miller
+    - davis
+    - wilson
+    - moore
+    - taylor
+
+  latino:
+    - chavez
+    - morales
+    - romero
+    - flores
+    - reyes
+    - jimenez
+    - diaz
+    - vargas
+    - castillo
+    - mendoza
+
+  arabisch:
+    - ali
+    - hassan
+    - hussein
+    - omar
+    - khalil
+    - mansour
+    - salem
+    - nasser
+    - fouad
+    - karim
+
+  türkisch:
+    - yilmaz
+    - kaya
+    - demir
+    - sahin
+    - celik
+    - yildiz
+    - turk
+    - arslan
+    - ozturk
+    - aydin
+
+  skandinavisch:
+    - andersen
+    - johansson
+    - karlsson
+    - larsson
+    - nilsson
+    - eriksson
+    - hansen
+    - olsen
+    - lindqvist
+    - berg
+
+  niederländisch:
+    - de_jong
+    - janssen
+    - de_vries
+    - van_den_berg
+    - bakker
+    - visser
+    - smit
+    - meijer
+    - de_boer
+    - mulder
+
+# ------------------------------------------------------------
+# SPAM PATTERNS
+# ------------------------------------------------------------
+spam:
+  patterns:
+    - random_chars        # xk7f2q9p
+    - digits_heavy        # user123456789
+    - mixed_chaos         # xK7f2Q9p
+    - short_random        # xk7f
+    - long_random         # xk7f2q9pmnbvcxz
+
+  local_length:
+    min: 5
+    max: 16
+
+  domain_length:
+    min: 4
+    max: 10
+
+# ------------------------------------------------------------
+# EMAIL FORMAT OPTIONEN
+# ------------------------------------------------------------
+format:
+  separators:
+    - "."                 # vorname.nachname
+    - "_"                 # vorname_nachname
+    - ""                  # vornamennachname
+  
+  suffix_probability: 0.15   # 15% bekommen Jahreszahl: martin1985
+  suffix_range:
+    min: 1970
+    max: 2005

@@ -1,0 +1,33 @@
+﻿Stock_prediction/
+│
+│
+├── A_dokumentation/
+│   ├── 2026-05-15_sap_n8n_claude_fraud.md
+│   ├── 2026-05-20_sap_n8n_order_detection.md
+│   ├── 2026-05-21_sap_n8n_order_detection.md
+│   ├── 2026-05-29_email_Verification_Planung.md
+│   └── Startcode_batDatei.md
+├── data/
+├── models/
+│   ├── label_encoder_customer.pkl
+│   ├── label_encoder_user.pkl
+│   └── sap_isolation_forest.pkl
+├── python/
+│   ├── predict/
+│   ├── training/
+│   ├── utils/
+│   └── requirements.txt
+├── screenshots/
+│   ├── email_digest.jpg
+│   ├── n8n_workflow.jpg
+│   └── supabase_anomalien.jpg
+├── venv_sap/
+│   ├── Include/
+│   ├── Lib/
+│   ├── Scripts/
+│   ├── share/
+│   ├── .gitignore
+│   └── pyvenv.cfg
+└── workflows/
+    ├── sap_claude_analyse_v1.json
+    └── sap_order_validating.json
