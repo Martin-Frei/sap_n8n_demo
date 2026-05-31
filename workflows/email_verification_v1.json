@@ -6,75 +6,11 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -1856,
+        -2144,
         -608
       ],
       "id": "e1f55df3-820c-45f5-afe5-8149a5699678",
       "name": "When clicking ‘Execute workflow’"
-    },
-    {
-      "parameters": {
-        "url": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_AddressEmailAddress",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "$top",
-              "value": "5"
-            },
-            {}
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        -1680,
-        -608
-      ],
-      "id": "f24adf74-b0dc-4c89-ade5-f558ec266fd5",
-      "name": "HTTP Request",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "bya0S9uPze6BctdS",
-          "name": "Header Auth account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const results = $input.first().json.d.results;\n\nreturn results.map(item => ({\n  json: {\n    EmailAddress: item.EmailAddress,\n    AddressID:    item.AddressID,\n    Person:       item.Person,\n  }\n}));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -1520,
-        -608
-      ],
-      "id": "8f571f26-e5a5-449e-ae42-6cdcbd7767b5",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "http://127.0.0.1:5001/verify",
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ JSON.stringify($input.all().map(i => i.json)) }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        -1360,
-        -608
-      ],
-      "id": "6d07c1b5-6165-46cf-98dc-58e3175a6a56",
-      "name": "HTTP Request1"
     },
     {
       "parameters": {
@@ -114,6 +50,83 @@
     },
     {
       "parameters": {
+        "url": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_AddressEmailAddress",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "$top",
+              "value": "5"
+            },
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1936,
+        -608
+      ],
+      "id": "f24adf74-b0dc-4c89-ade5-f558ec266fd5",
+      "name": "SAP Sanbox",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bya0S9uPze6BctdS",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.d.results;\n\nreturn results.map(item => ({\n  json: {\n    EmailAddress: item.EmailAddress,\n    AddressID:    item.AddressID,\n    Person:       item.Person,\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1696,
+        -608
+      ],
+      "id": "8f571f26-e5a5-449e-ae42-6cdcbd7767b5",
+      "name": "JS Split for flask"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/verify",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($input.all().map(i => i.json)) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1472,
+        -608
+      ],
+      "id": "6d07c1b5-6165-46cf-98dc-58e3175a6a56",
+      "name": "Send data to flask"
+    },
+    {
+      "parameters": {
+        "jsCode": "// results Array aufteilen in einzelne Items\nconst data = $input.first().json;\n\nreturn data.results.map(item => ({\n  json: item\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1232,
+        -608
+      ],
+      "id": "d8cd88ee-9a12-40d4-a660-e0a95b26a379",
+      "name": "JS split array to items"
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
         "authentication": "predefinedCredentialType",
@@ -136,11 +149,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -912,
+        -960,
         -720
       ],
       "id": "37ec5c92-41bd-4155-85f9-09d3155a7159",
-      "name": "HTTP Request2",
+      "name": "Claude call",
       "credentials": {
         "anthropicApi": {
           "id": "jC7d3PjlvyMXkuBY",
@@ -150,17 +163,96 @@
     },
     {
       "parameters": {
-        "operation": "update",
-        "tableId": "email_checks"
+        "jsCode": "return $input.all().map(item => {\n  const text = item.json.content[0].text;\n  const clean = text.replace(/```json\\n?|\\n?```/g, '').trim();\n  const parsed = JSON.parse(clean);\n  return {\n    json: {\n      verdict:    parsed.verdict,\n      reason:     parsed.reason,\n      confidence: parsed.confidence,\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        -864
+      ],
+      "id": "36a63b54-fad8-41ae-8d8d-8eb821528be4",
+      "name": "JS split claude ti items"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -736,
+        -640
+      ],
+      "id": "11da3358-9feb-4ba3-b596-5cd84ca4bced",
+      "name": "Merge all true data"
+    },
+    {
+      "parameters": {
+        "tableId": "email_checks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "email_hash",
+              "fieldValue": "={{ $json.email_hash }}"
+            },
+            {
+              "fieldId": "verdict",
+              "fieldValue": "={{ $json.verdict }}"
+            },
+            {
+              "fieldId": "mx_status",
+              "fieldValue": "={{ $json.mx_status }}"
+            },
+            {
+              "fieldId": "smtp_status",
+              "fieldValue": "={{ $json.smtp_status }}"
+            },
+            {
+              "fieldId": "entropy_status",
+              "fieldValue": "={{ $json.entropy_status }}"
+            },
+            {
+              "fieldId": "iso_status",
+              "fieldValue": "={{ $json.iso_status }}"
+            },
+            {
+              "fieldId": "iso_score",
+              "fieldValue": "={{ $json.iso_score }}"
+            },
+            {
+              "fieldId": "needs_claude",
+              "fieldValue": "={{ $json.needs_claude }}"
+            },
+            {
+              "fieldId": "claude_verdict",
+              "fieldValue": "={{ $json.needs_claude ? $json.claude_verdict : null }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "sap_demo"
+            },
+            {
+              "fieldId": "consent",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "features",
+              "fieldValue": "={{ JSON.stringify({local_entropy: $json.local_entropy, domain_entropy: $json.domain_entropy, iso_score: $json.iso_score}) }} "
+            }
+          ]
+        }
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -912,
-        -512
+        -512,
+        -640
       ],
       "id": "b269945c-9a03-4d35-ba05-5bd1930314c2",
-      "name": "Update a row",
+      "name": "Create a row",
       "credentials": {
         "supabaseApi": {
           "id": "VejGvZyPssVn2en1",
@@ -170,29 +262,16 @@
     },
     {
       "parameters": {
-        "jsCode": "// results Array aufteilen in einzelne Items\nconst data = $input.first().json;\n\nreturn data.results.map(item => ({\n  json: item\n}));"
+        "jsCode": "function simpleHash(str) {\n    let hash = 0;\n    for (let i = 0; i < str.length; i++) {\n        const char = str.charCodeAt(i);\n        hash = ((hash << 5) - hash) + char;\n        hash = hash & hash;\n    }\n    return Math.abs(hash).toString(16).padStart(8, '0');\n}\n\nreturn $input.all().map(item => ({\n    json: {\n        ...item.json,\n        email_hash: simpleHash(item.json.email),\n        verdict: item.json.verdict || 'normal',\n       claude_verdict: item.json.needs_claude === true && item.json.verdict ? \n    item.json.verdict + ' (' + item.json.confidence + ')' : null,\n        features: JSON.stringify({\n            local_entropy:  item.json.local_entropy,\n            domain_entropy: item.json.domain_entropy,\n            iso_score:      item.json.iso_score,\n            entropy_status: item.json.entropy_status,\n            iso_status:     item.json.iso_status,\n        })\n    }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1232,
-        -608
+        -624,
+        -432
       ],
-      "id": "d8cd88ee-9a12-40d4-a660-e0a95b26a379",
-      "name": "Code in JavaScript1"
-    },
-    {
-      "parameters": {
-        "jsCode": "return $input.all().map(item => {\n  const text = item.json.content[0].text;\n  const clean = text.replace(/```json\\n?|\\n?```/g, '').trim();\n  const parsed = JSON.parse(clean);\n  return {\n    json: {\n      verdict:    parsed.verdict,\n      reason:     parsed.reason,\n      confidence: parsed.confidence,\n    }\n  };\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -736,
-        -720
-      ],
-      "id": "36a63b54-fad8-41ae-8d8d-8eb821528be4",
-      "name": "Code in JavaScript2"
+      "id": "5f59076e-9765-4b8c-a567-0193fa60de57",
+      "name": "Code in JavaScript"
     }
   ],
   "pinData": {},
@@ -201,40 +280,7 @@
       "main": [
         [
           {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP Request": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP Request1": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript1",
+            "node": "SAP Sanbox",
             "type": "main",
             "index": 0
           }
@@ -245,21 +291,59 @@
       "main": [
         [
           {
-            "node": "HTTP Request2",
+            "node": "Claude call",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Merge all true data",
+            "type": "main",
+            "index": 1
           }
         ],
         [
           {
-            "node": "Update a row",
+            "node": "Code in JavaScript",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript1": {
+    "SAP Sanbox": {
+      "main": [
+        [
+          {
+            "node": "JS Split for flask",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JS Split for flask": {
+      "main": [
+        [
+          {
+            "node": "Send data to flask",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send data to flask": {
+      "main": [
+        [
+          {
+            "node": "JS split array to items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JS split array to items": {
       "main": [
         [
           {
@@ -270,16 +354,49 @@
         ]
       ]
     },
-    "Update a row": {
+    "Claude call": {
+      "main": [
+        [
+          {
+            "node": "JS split claude ti items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JS split claude ti items": {
+      "main": [
+        [
+          {
+            "node": "Merge all true data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge all true data": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
       "main": [
         []
       ]
     },
-    "HTTP Request2": {
+    "Code in JavaScript": {
       "main": [
         [
           {
-            "node": "Code in JavaScript2",
+            "node": "Create a row",
             "type": "main",
             "index": 0
           }
@@ -293,7 +410,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "cc5622ee-cd81-4dca-8d30-de20a0c3cff3",
+  "versionId": "71032cb4-b953-42c1-b513-c88c12f986a2",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "145fc6c5bdc9ec90ebf8f61ef2647d36ad8841cd7f9a8eb5894d7f052d351498"
