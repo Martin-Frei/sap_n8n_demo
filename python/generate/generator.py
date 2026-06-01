@@ -24,24 +24,12 @@ import string
 import pandas as pd
 import yaml
 
-
-
 # ============================================================
 # 1. CONFIG LADEN
 # ============================================================
 
 with open('config.yaml', encoding='utf-8') as f:
     config = yaml.safe_load(f)
-    
-TRUSTED_DOMAINS = {
-    'gmail', 'googlemail', 'outlook', 'yahoo',
-    'web', 'gmx', 'hotmail', 'icloud',
-    'protonmail', 't-online', 'freenet',
-    'posteo', 'mailbox'
-}
-
-
-SUSPICIOUS_TLDS = set(tld.strip('.') for tld in config['domains']['spam_tlds'])
 
 # Einstellungen auslesen
 TOTAL = config['output']['total_count']
@@ -192,8 +180,23 @@ def generate_normal_email():
 
 
 def generate_spam_email():
+    """
+    50% Spam mit echten Domains → testet Layer 2-8!
+    50% Spam mit fake TLDs → Layer 1 fängt ab
+
+    Beispiele:
+    bkk4cij@gmail.com      → echte Domain, wirrer lokaler Teil
+    xk7f2q9@gmx.de         → echte Domain, random chars
+    123456abc@web.de        → echte Domain, viele Zahlen
+    xk9q2.biz              → fake TLD, Layer 1 fängt ab
+    """
     local = generate_spam_local()
-    domain = generate_spam_domain()
+    if random.random() < 0.5:
+        # Echte Domain → testet Layer 2-8!
+        domain = random.choice(NORMAL_DOMAINS)
+    else:
+        # Fake TLD → Layer 1 fängt ab
+        domain = generate_spam_domain()
     return f"{local}@{domain}"
 
 
@@ -202,6 +205,7 @@ def generate_spam_email():
 # ============================================================
 
 SUSPICIOUS_TLDS = set(tld.strip('.') for tld in SPAM_TLDS)
+TRUSTED_DOMAINS = {'example', 'test'}
 
 
 def extract_features(email, label):

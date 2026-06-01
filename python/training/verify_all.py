@@ -1,15 +1,15 @@
 """
-Email Verification — Kompletter Test aller 5 Layer
+Email Verification — Kompletter Test aller 8 Layer
 ===================================================
 Liest CSV mit Email-Adressen und prüft jede Email
-durch alle 5 Layer. Ergebnis wird in CSV gespeichert.
+durch alle 8 Layer. Ergebnis wird in CSV gespeichert.
 
 Batching: 10 Emails alle 3 Minuten → Anti-Blacklisting
 
 Output CSV:
-    email, label, L1, L2, L3, L3_score, L4, L4_score,
-    needs_claude, claude_verdict, claude_reason, 
-    claude_confidence, final_verdict
+    email, label, L1, L2, L3_entropy, L4_consonant,
+    L5_iso, needs_claude, L6_claude_verdict,
+    L6_claude_reason, L6_confidence, final_verdict, correct
 
 Starten:
     cd C:\\Users\\tsinn\\VSCode\\Repos\\sap_n8n_demo
@@ -39,7 +39,7 @@ BATCH_SIZE    = 10
 WAIT_MINUTES  = 3
 
 # ============================================================
-# FARBEN FÜR TERMINAL
+# FARBEN + ICONS
 # ============================================================
 
 GREEN  = "\033[92m"
@@ -52,29 +52,38 @@ def yellow(t): return f"{YELLOW}{t}{RESET}"
 def red(t):    return f"{RED}{t}{RESET}"
 
 def l1_icon(status):
-    if status == 'MX_FOUND':         return green("🟢")
-    if status == 'SKIPPED':          return yellow("🟡")
+    if status == 'MX_FOUND':  return green("🟢")
+    if status == 'SKIPPED':   return "⚪"
     return red("🔴")
 
 def l2_icon(status):
-    if status == 'VALID':            return green("🟢")
-    if status == 'SKIPPED':          return yellow("🟡")
+    if status == 'VALID':     return green("🟢")
+    if status == 'SKIPPED':   return "⚪"
     return red("🔴")
 
 def l3_icon(status):
-    if status == 'OK':               return green("🟢")
-    if status == 'SLIGHT':           return yellow("🟡")
+    if status == 'OK':        return green("🟢")
+    if status == 'SLIGHT':    return yellow("🟡")
     return red("🔴")
 
-def l4_icon(score):
-    if score is None:                return "⚪"
-    if score >= 0.0:                 return green("🟢")
-    if score >= -0.05:               return yellow("🟡")
+def l4_icon(status):
+    """Layer 4 — Konsonanten Check"""
+    if status == 'OK':        return green("🟢")
+    if status == 'SLIGHT':    return yellow("🟡")
+    if status == 'UNKNOWN':   return "⚪"
     return red("🔴")
 
-def l5_icon(verdict):
-    if verdict is None:              return "⚪"
-    if verdict == 'normal':          return green("🟢")
+def l5_icon(score):
+    """Layer 5 — Isolation Forest"""
+    if score is None:         return "⚪"
+    if score >= 0.0:          return green("🟢")
+    if score >= -0.05:        return yellow("🟡")
+    return red("🔴")
+
+def l6_icon(verdict):
+    """Layer 6 — Claude"""
+    if verdict is None:       return "⚪"
+    if verdict == 'normal':   return green("🟢")
     return red("🔴")
 
 def email_icon(label):
@@ -85,7 +94,7 @@ def email_icon(label):
 # ============================================================
 
 def ask_claude(email_data):
-    """Layer 5 — Claude analysiert verdächtige Emails"""
+    """Layer 6 — Claude analysiert verdächtige Emails"""
     if not CLAUDE_KEY:
         return None, "Kein API Key", 0.0
 
@@ -99,6 +108,9 @@ SMTP Status: {email_data['smtp_status']}
 Entropy Status: {email_data['entropy_status']}
 Local Entropy: {email_data['local_entropy']}
 Domain Entropy: {email_data['domain_entropy']}
+Konsonanten Status: {email_data.get('consonant_status', 'UNKNOWN')}
+Max Konsonanten: {email_data.get('max_consonants', 0)}
+Vokal Ratio: {email_data.get('vowel_ratio', 0)}
 ISO Status: {email_data['iso_status']}
 ISO Score: {email_data['iso_score']}
 
@@ -131,9 +143,9 @@ Antworte NUR mit diesem JSON (kein Markdown):
 # HAUPTPROGRAMM
 # ============================================================
 
-print("=" * 70)
-print("EMAIL VERIFICATION — ALLE 5 LAYER")
-print("=" * 70)
+print("=" * 75)
+print("EMAIL VERIFICATION — ALLE 8 LAYER")
+print("=" * 75)
 
 # CSV laden
 df = pd.read_csv(INPUT_CSV)
@@ -143,13 +155,12 @@ print(f"   Spam:   {len(df[df['label']=='spam'])}")
 print(f"\n⏱️  Batch: {BATCH_SIZE} Emails alle {WAIT_MINUTES} Minuten")
 print(f"   Geschätzte Dauer: {len(df) // BATCH_SIZE * WAIT_MINUTES} Minuten\n")
 
-# Output vorbereiten
 results = []
 total_batches = (len(df) + BATCH_SIZE - 1) // BATCH_SIZE
 
 # Header
-print(f"{'Email':<40} {'Exp':>3}  {'L1':>2}  {'L2':>2}  {'L3':>2}  {'L4':>2}  {'L5':>2}  Claude Kommentar")
-print("-" * 100)
+print(f"{'Email':<42} {'Exp':>3}  {'L1':>2}  {'L2':>2}  {'L3':>2}  {'L4':>2}  {'L5':>2}  {'L6':>2}  Kommentar")
+print("-" * 105)
 
 # Batches verarbeiten
 for batch_num in range(total_batches):
@@ -159,57 +170,50 @@ for batch_num in range(total_batches):
 
     print(f"\n📦 Batch {batch_num + 1}/{total_batches} ({start+1}-{end})")
 
-    # Flask /verify aufrufen
     payload = [
-        {
-            "EmailAddress": row['email'],
-            "AddressID":    str(i),
-            "Person":       ""
-        }
+        {"EmailAddress": row['email'], "AddressID": str(i), "Person": ""}
         for i, row in batch.iterrows()
     ]
 
     try:
-        response = requests.post(
-            FLASK_URL,
-            json=payload,
-            timeout=120
-        )
+        response = requests.post(FLASK_URL, json=payload, timeout=120)
         verify_results = response.json()['results']
     except Exception as e:
         print(f"❌ Flask Fehler: {e}")
         continue
 
-    # Ergebnisse verarbeiten
     for idx, (_, row) in enumerate(batch.iterrows()):
         vr = verify_results[idx] if idx < len(verify_results) else {}
 
-        email          = row['email']
-        label          = row['label']
-        mx_status      = vr.get('mx_status', 'ERROR')
-        smtp_status    = vr.get('smtp_status', 'ERROR')
-        entropy_status = vr.get('entropy_status', 'ERROR')
-        iso_status     = vr.get('iso_status', 'ERROR')
-        iso_score      = vr.get('iso_score')
-        local_entropy  = vr.get('local_entropy', 0)
-        domain_entropy = vr.get('domain_entropy', 0)
-        needs_claude   = vr.get('needs_claude', False)
+        email             = row['email']
+        label             = row['label']
+        mx_status         = vr.get('mx_status', 'ERROR')
+        smtp_status       = vr.get('smtp_status', 'ERROR')
+        entropy_status    = vr.get('entropy_status', 'ERROR')
+        consonant_status  = vr.get('consonant_status', 'UNKNOWN')
+        max_cons          = vr.get('max_consonants', 0)
+        vowel_ratio       = vr.get('vowel_ratio', 0.0)
+        iso_status        = vr.get('iso_status', 'ERROR')
+        iso_score         = vr.get('iso_score')
+        local_entropy     = vr.get('local_entropy', 0)
+        domain_entropy    = vr.get('domain_entropy', 0)
+        needs_claude      = vr.get('needs_claude', False)
 
-        # Layer 5 — Claude
+        # Layer 6 — Claude
         claude_verdict    = None
         claude_reason     = None
         claude_confidence = None
 
         if needs_claude and CLAUDE_KEY:
             claude_verdict, claude_reason, claude_confidence = ask_claude(vr)
-            time.sleep(0.5)  # Claude Rate Limit
+            time.sleep(0.5)
 
         # Final Verdict
         if claude_verdict:
             final_verdict = claude_verdict
         elif mx_status != 'MX_FOUND':
             final_verdict = 'spam'
-        elif iso_status == 'SUSPICIOUS':
+        elif iso_status == 'SUSPICIOUS' or consonant_status == 'SUSPICIOUS':
             final_verdict = 'spam'
         elif entropy_status == 'SUSPICIOUS':
             final_verdict = 'spam'
@@ -217,43 +221,45 @@ for batch_num in range(total_batches):
             final_verdict = 'normal'
 
         # Terminal Output
-        comment = claude_reason[:40] if claude_reason else ""
+        comment = claude_reason[:35] if claude_reason else ""
         print(
-            f"{email:<40} "
+            f"{email:<42} "
             f"{email_icon(label)}  "
             f"{l1_icon(mx_status)}  "
             f"{l2_icon(smtp_status)}  "
             f"{l3_icon(entropy_status)}  "
-            f"{l4_icon(iso_score)}  "
-            f"{l5_icon(claude_verdict)}  "
+            f"{l4_icon(consonant_status)}  "
+            f"{l5_icon(iso_score)}  "
+            f"{l6_icon(claude_verdict)}  "
             f"{comment}"
         )
 
-        # Ergebnis speichern
         results.append({
-            'email':              email,
-            'label':              label,
-            'L1_mx':              mx_status,
-            'L2_smtp':            smtp_status,
-            'L3_entropy':         entropy_status,
-            'L3_local_entropy':   local_entropy,
-            'L3_domain_entropy':  domain_entropy,
-            'L4_iso_status':      iso_status,
-            'L4_iso_score':       iso_score,
-            'needs_claude':       needs_claude,
-            'L5_verdict':         claude_verdict,
-            'L5_reason':          claude_reason,
-            'L5_confidence':      claude_confidence,
-            'final_verdict':      final_verdict,
-            'correct':            final_verdict == label,
+            'email':             email,
+            'label':             label,
+            'L1_mx':             mx_status,
+            'L2_smtp':           smtp_status,
+            'L3_entropy':        entropy_status,
+            'L3_local_entropy':  local_entropy,
+            'L3_domain_entropy': domain_entropy,
+            'L4_consonant':      consonant_status,
+            'L4_max_cons':       max_cons,
+            'L4_vowel_ratio':    vowel_ratio,
+            'L5_iso_status':     iso_status,
+            'L5_iso_score':      iso_score,
+            'needs_claude':      needs_claude,
+            'L6_verdict':        claude_verdict,
+            'L6_reason':         claude_reason,
+            'L6_confidence':     claude_confidence,
+            'final_verdict':     final_verdict,
+            'correct':           final_verdict == label,
         })
 
-    # Zwischenspeichern nach jedem Batch
+    # Zwischenspeichern
     os.makedirs('data', exist_ok=True)
     pd.DataFrame(results).to_csv(OUTPUT_CSV, index=False)
     print(f"   💾 Zwischenspeichert: {len(results)} Emails")
 
-    # Warten (außer letzter Batch)
     if batch_num < total_batches - 1:
         print(f"\n   ⏳ Warte {WAIT_MINUTES} Minuten bis zum nächsten Batch...")
         for remaining in range(WAIT_MINUTES * 60, 0, -30):
@@ -270,17 +276,18 @@ correct   = result_df['correct'].sum()
 spam_df   = result_df[result_df['label'] == 'spam']
 normal_df = result_df[result_df['label'] == 'normal']
 
-spam_caught  = (spam_df['final_verdict'] == 'spam').sum()
-false_pos    = (normal_df['final_verdict'] == 'spam').sum()
+spam_caught = (spam_df['final_verdict'] == 'spam').sum()
+false_pos   = (normal_df['final_verdict'] == 'spam').sum()
 
-print(f"\n{'='*70}")
+print(f"\n{'='*75}")
 print(f"📊 GESAMTERGEBNIS:")
 print(f"   Gesamt korrekt:   {correct}/{total} ({int(correct/total*100)}%)")
 print(f"   Spam erkannt:     {spam_caught}/{len(spam_df)}")
 print(f"   False Positives:  {false_pos}/{len(normal_df)}")
 print(f"\n💾 Gespeichert: {OUTPUT_CSV}")
-print(f"{'='*70}")
+print(f"{'='*75}")
 
 print("\nLegende:")
-print("  Exp: ✅ normal  ❌ spam")
-print("  L1-L5: 🟢 ok  🟡 leicht verdächtig  🔴 spam/blockiert  ⚪ nicht geprüft")
+print("  Exp:    ✅ normal   ❌ spam")
+print("  L1-L6:  🟢 ok   🟡 leicht verdächtig   🔴 spam/blockiert   ⚪ nicht geprüft")
+print("  L1: MX Check  L2: SMTP  L3: Entropy  L4: Konsonanten  L5: IsoForest  L6: Claude")
