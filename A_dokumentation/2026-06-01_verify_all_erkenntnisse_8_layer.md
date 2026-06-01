@@ -118,24 +118,45 @@ xjGJX → 5 Konsonanten → SUSPICIOUS!
 
 ### Implementierung:
 ```python
+# Deutsche/englische Digraphen als ein Zeichen zählen
+# sch, ch, th, ph sind normale Lautkombinationen!
+text = local.lower()
+text = text.replace('sch', 's').replace('ch', 'c')
+text = text.replace('th', 't').replace('ph', 'f')
+
 # Max aufeinanderfolgende Konsonanten
 max_cons = 0
 current = 0
-for c in local.lower():
+for c in text:
     if c.isalpha() and c not in 'aeiouäöü':
         current += 1
         max_cons = max(max_cons, current)
     else:
         current = 0
 
-# Vokal Ratio
+# Vokal Ratio (auf Original)
 vowels = sum(1 for c in local.lower() if c in 'aeiouäöü')
 vowel_ratio = vowels / len(local) if local else 0
 
-# Bewertung
-if max_cons >= 4 or vowel_ratio < 0.15:  → 🔴 SUSPICIOUS
-if max_cons >= 3 or vowel_ratio < 0.25:  → 🟡 SLIGHT
+# Bewertung — Schwelle bei 4/5 wegen deutscher Namen!
+if max_cons >= 5 or vowel_ratio < 0.15:  → 🔴 SUSPICIOUS
+if max_cons >= 4 or vowel_ratio < 0.25:  → 🟡 SLIGHT
 else:                                     → 🟢 OK
+```
+
+### Warum Schwelle 4/5 statt 3/4?
+```
+schmidt   → schm → nach Digraph-Erkennung: sm → 2 → 🟢 ✅
+schweizer → schw → nach Digraph-Erkennung: sw → 2 → 🟢 ✅
+hochhauser → chh → nach Digraph-Erkennung: ch → 2 → 🟢 ✅
+bergmann  → rg, nn → max 2 → 🟢 ✅
+
+bkk4cij   → bkk → 3 → 🟡 SLIGHT → Claude! ✅
+xjGJXke   → xjGJX → 5 → 🔴 SUSPICIOUS → Claude! ✅
+pdzp      → pdzp → 4 → 🟡 SLIGHT → Claude! ✅
+
+Regel: lieber 2x zu viel als 1x zu wenig!
+→ Claude korrigiert False Positives!
 ```
 
 ### Kulturell universell:
@@ -147,7 +168,7 @@ Jede menschliche Sprache hat Vokale!
 → kein echter Name hat 4+ Konsonanten
    hintereinander ohne Vokal!
 
-Ausnahme: Tschechisch "strč prst skrz krk"
+Ausnahme: Tschechisch "strč prst skrz krk" ("Steck den Finger durch den Hals")
 → aber kommt nie in Email-Adressen vor! 😄
 ```
 

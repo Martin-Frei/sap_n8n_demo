@@ -72,8 +72,55 @@ def check_entropy(email):
         if grade(local_e) == g or grade(domain_e) == g:
             return g, local_e, domain_e
 
+def check_consonants(email):
+    """
+    Layer 4 — Konsonanten + Vokal Check
+    Prüft ob lokaler Teil einem echten Namen ähnelt.
+    Kulturell universell — alle Sprachen haben Vokale!
+
+    Digraphen werden normalisiert:
+    sch, ch, th, ph → normale Lautkombinationen → als 1 Zeichen
+
+    Schwellen:
+    🔴 SUSPICIOUS: max_cons >= 5 oder vowel_ratio < 0.15
+    🟡 SLIGHT:     max_cons >= 4 oder vowel_ratio < 0.25
+    🟢 OK:         alles andere
+    """
+    if '@' not in email:
+        return 'INVALID', 0, 0.0
+
+    local = email.split('@')[0].lower()
+
+    # Digraphen normalisieren
+    text = local
+    text = text.replace('sch', 's')
+    text = text.replace('ch', 'c')
+    text = text.replace('th', 't')
+    text = text.replace('ph', 'f')
+
+    # Max aufeinanderfolgende Konsonanten
+    max_cons = 0
+    current  = 0
+    for c in text:
+        if c.isalpha() and c not in 'aeiouäöü':
+            current += 1
+            max_cons = max(max_cons, current)
+        else:
+            current = 0
+
+    # Vokal Ratio (auf Original ohne Digraph-Normalisierung)
+    vowels      = sum(1 for c in local if c in 'aeiouäöü')
+    vowel_ratio = round(vowels / len(local), 4) if local else 0.0
+
+    # Bewertung
+    if max_cons >= 5 or vowel_ratio < 0.15:
+        return 'SUSPICIOUS', max_cons, vowel_ratio
+    if max_cons >= 4 or vowel_ratio < 0.25:
+        return 'SLIGHT', max_cons, vowel_ratio
+    return 'OK', max_cons, vowel_ratio
+
 def extract_email_features(email):
-    """Layer 4 — Features für Email Isolation Forest"""
+    """Layer 5 — Features für Email Isolation Forest"""
     if '@' not in email:
         return None
     local, domain_full = email.split('@', 1)
@@ -274,7 +321,10 @@ def verify_email():
         # ── Layer 3 — Entropy Check ──────────────────────────
         entropy_status, local_e, domain_e = check_entropy(email)
 
-        # ── Layer 4 — Isolation Forest ───────────────────────
+        # ── Layer 4 — Konsonanten + Vokal Check ──────────────
+        consonant_status, max_cons, vowel_ratio = check_consonants(email)
+
+        # ── Layer 5 — Isolation Forest ───────────────────────
         iso_status = 'SKIPPED'
         iso_score  = None
         if email_model is not None:
@@ -285,28 +335,37 @@ def verify_email():
                 iso_score  = round(float(email_model.decision_function(df_row)[0]), 4)
                 iso_status = 'SUSPICIOUS' if prediction == -1 else 'OK'
 
-        # ── Layer 5 Flag — geht zu Claude? ───────────────────
-        # Regel: SLIGHT oder SUSPICIOUS bei L3 oder L4 → Claude prüft
+        # ── Layer 6 Flag — geht zu Claude? ───────────────────
+        # L1 🔴 → direkt spam, kein Claude
+        # L1 🟢 + L2 🔴 → Claude
+        # L1 🟢 + L3/L4/L5 🟡/🔴 → Claude
         needs_claude = (
-            entropy_status in ('SLIGHT', 'SUSPICIOUS') or
-            iso_status == 'SUSPICIOUS' or
-            (iso_score is not None and iso_score < 0.0)
+            mx_status == 'MX_FOUND' and (
+                smtp_status not in ('VALID', 'SKIPPED') or
+                entropy_status in ('SLIGHT', 'SUSPICIOUS') or
+                consonant_status in ('SLIGHT', 'SUSPICIOUS') or
+                iso_status == 'SUSPICIOUS' or
+                (iso_score is not None and iso_score < 0.0)
+            )
         )
 
         results.append({
-            'email':          email,
-            'address_id':     entry.get('AddressID', ''),
-            'person':         entry.get('Person', ''),
-            'domain':         domain,
-            'mx_status':      mx_status,
-            'smtp_status':    smtp_status,
-            'entropy_status': entropy_status,
-            'local_entropy':  local_e,
-            'domain_entropy': domain_e,
-            'iso_status':     iso_status,
-            'iso_score':      iso_score,
-            'needs_claude':   needs_claude,
-            'tld':            domain.split('.')[-1] if domain else '',
+            'email':             email,
+            'address_id':        entry.get('AddressID', ''),
+            'person':            entry.get('Person', ''),
+            'domain':            domain,
+            'mx_status':         mx_status,
+            'smtp_status':       smtp_status,
+            'entropy_status':    entropy_status,
+            'local_entropy':     local_e,
+            'domain_entropy':    domain_e,
+            'consonant_status':  consonant_status,
+            'max_consonants':    max_cons,
+            'vowel_ratio':       vowel_ratio,
+            'iso_status':        iso_status,
+            'iso_score':         iso_score,
+            'needs_claude':      needs_claude,
+            'tld':               domain.split('.')[-1] if domain else '',
         })
 
         time.sleep(random.uniform(0.5, 2.0))
