@@ -185,7 +185,7 @@ alejandra.kumar1986@web.de     → L3🟡 + L4🔴 (Jahreszahl)
 ```
 ✅ Layer 4 Konsonanten funktioniert!
    → 8/10 echte Spam ohne L2 erkannt
-   → L4 ist der wichtigste neue Layer
+   → L4 ist der effektivste Layer
 
 ⚠️ needs_claude zu aggressiv (178/200)
    → L2 Regel überarbeiten
