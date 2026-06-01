@@ -8,31 +8,32 @@
 # OUTPUT
 # ------------------------------------------------------------
 output:
-  total_count: 1000          # Gesamtanzahl Emails
+  total_count: 200         # Gesamtanzahl Emails
   spam_ratio: 0.10           # 10% Spam = 100 Spam, 900 Normal
-  output_file: "examples/sample_1000.csv"
+  output_file: "examples/sample_200_real_domain.csv"
   seed: 42                   # Reproduzierbarkeit
 
 # ------------------------------------------------------------
 # DOMAINS — RFC 2606 reserviert (nie erreichbar, nie echt!)
 # ------------------------------------------------------------
+
 domains:
   normal:
-    - "example.com"
-    - "example.org"
-    - "example.net"
-    - "test.com"
-    - "example.de"
-    - "example.fr"
-    - "example.it"
-    - "example.es"
-    - "example.co.uk"
-    - "example.com.br"
-    - "example.co.jp"
-    - "example.co.za"
-    - "example.com.au"
-    - "example.pl"
-    - "example.ru"
+    - "gmail.com"
+    - "gmx.de"
+    - "web.de"
+    - "t-online.de"
+    - "outlook.com"
+    - "yahoo.com"
+    - "icloud.com"
+    - "protonmail.com"
+    - "hotmail.com"
+    - "freenet.de"
+    - "posteo.de"
+    - "mailbox.org"
+    - "yahoo.de"
+    - "googlemail.com"
+
 
   spam_tlds:
     - ".biz"

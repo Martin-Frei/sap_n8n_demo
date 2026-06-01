@@ -352,7 +352,7 @@ This project demonstrates two automated Fraud Detection Pipelines built with SAP
 **Martin Freimuth**
 - 🌐 [Portfolio](https://www.martin-freimuth.dev)
 - 💼 [LinkedIn](https://www.linkedin.com/in/martin-freimuth/)
-- 📧 mat.frei@gmx.de
+- 📧 martin@houseofstocks.dev
 
 ---
 

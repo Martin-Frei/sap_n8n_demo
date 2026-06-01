@@ -24,12 +24,24 @@ import string
 import pandas as pd
 import yaml
 
+
+
 # ============================================================
 # 1. CONFIG LADEN
 # ============================================================
 
 with open('config.yaml', encoding='utf-8') as f:
     config = yaml.safe_load(f)
+    
+TRUSTED_DOMAINS = {
+    'gmail', 'googlemail', 'outlook', 'yahoo',
+    'web', 'gmx', 'hotmail', 'icloud',
+    'protonmail', 't-online', 'freenet',
+    'posteo', 'mailbox'
+}
+
+
+SUSPICIOUS_TLDS = set(tld.strip('.') for tld in config['domains']['spam_tlds'])
 
 # Einstellungen auslesen
 TOTAL = config['output']['total_count']
@@ -190,7 +202,6 @@ def generate_spam_email():
 # ============================================================
 
 SUSPICIOUS_TLDS = set(tld.strip('.') for tld in SPAM_TLDS)
-TRUSTED_DOMAINS = {'example', 'test'}
 
 
 def extract_features(email, label):
