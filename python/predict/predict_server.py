@@ -343,8 +343,8 @@ def verify_email():
         # L1 🟢 + L3/L4/L5 🟡/🔴 → Claude
         feats = extract_email_features(email) or {}
         local_suspicious = (
-            feats.get('digit_ratio', 0) > 0.4 or
-            feats.get('local_length', 0) > 15 or
+            feats.get('digit_ratio', 0) >= 0.4 or
+            feats.get('local_length', 0) >= 15 or
             vowel_ratio < 0.15
         )
 
