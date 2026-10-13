@@ -621,33 +621,6 @@ Detaillierte Schritt-für-Schritt Dokumentation in `A_dokumetiation/`:
 
 ---
 
-## 🇬🇧 English Summary
-
-**For my friends and tutors**
-
-This project demonstrates two automated Fraud Detection Pipelines built with SAP, n8n, Python, and Claude AI:
-
-**Pipeline 1 — SAP Sales Order Anomaly Detection:**
-- Isolation Forest detects statistical outliers in order data
-- Claude AI explains every anomaly in plain language
-- Automated HTML email digest with history and trend analysis
-
-**Pipeline 2 — Email Verification (8-Layer Defense in Depth):**
-- Layer 1: DNS MX Check
-- Layer 2: SMTP Handshake (with provider awareness)
-- Layer 3: Entropy Check (mathematics, no training needed)
-- Layer 4: Consonant/Vowel Pattern (NEW! — most effective layer)
-- Layer 5: Isolation Forest (trained on 1000 synthetic emails, 18 cultural backgrounds)
-- Layer 6: Claude AI (context + explanation for borderline cases)
-- Layer 7: Human in the Loop (admin decides, system learns)
-- Layer 8: Auto-Retrain (weekly model updates)
-
-**Key insight:** No single layer is perfect. Together they achieve 93-95% accuracy with 0 false negatives — exactly like real AML detection systems.
-
-**SMTP Provider Behavior (discovered):**
-Large email providers (Gmail, GMX, Hotmail, etc.) intentionally block SMTP verification checks. This is **normal** and not a spam signal! Layer 2 must be combined with other signals.
-
----
 
 ## 👤 Autor
 
