@@ -337,11 +337,20 @@ def verify_email():
 
         # ── Layer 6 Flag — geht zu Claude? ───────────────────
         # L1 🔴 → direkt spam, kein Claude
-        # L1 🟢 + L2 🔴 → Claude
+        # L1 🟢 + L2 🔴 + lokaler Teil verdächtig → Claude
+        #   (L2 allein ist kein Signal: GMX, Hotmail, Web.de & Co.
+        #    blocken SMTP-Checks grundsätzlich → Test 2: 178/200)
         # L1 🟢 + L3/L4/L5 🟡/🔴 → Claude
+        feats = extract_email_features(email) or {}
+        local_suspicious = (
+            feats.get('digit_ratio', 0) > 0.4 or
+            feats.get('local_length', 0) > 15 or
+            vowel_ratio < 0.15
+        )
+
         needs_claude = (
             mx_status == 'MX_FOUND' and (
-                smtp_status not in ('VALID', 'SKIPPED') or
+                (smtp_status not in ('VALID', 'SKIPPED') and local_suspicious) or
                 entropy_status in ('SLIGHT', 'SUSPICIOUS') or
                 consonant_status in ('SLIGHT', 'SUSPICIOUS') or
                 iso_status == 'SUSPICIOUS' or
